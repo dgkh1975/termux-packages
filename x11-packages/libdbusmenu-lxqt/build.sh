@@ -1,0 +1,10 @@
+TERMUX_PKG_HOMEPAGE=https://github.com/lxqt/libdbusmenu-lxqt
+TERMUX_PKG_DESCRIPTION="A library that provides a Qt implementation of the DBusMenu protocol"
+TERMUX_PKG_LICENSE="LGPL-2.0"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION="0.5.0"
+TERMUX_PKG_SRCURL="https://github.com/lxqt/libdbusmenu-lxqt/releases/download/${TERMUX_PKG_VERSION}/libdbusmenu-lxqt-${TERMUX_PKG_VERSION}.tar.xz"
+TERMUX_PKG_SHA256=64083c3cd606bda18adb50d5e8bbdec79fffdd2df485b153037d8e235ae33390
+TERMUX_PKG_DEPENDS="libc++, qt6-qtbase"
+TERMUX_PKG_BUILD_DEPENDS="lxqt-build-tools"
+TERMUX_PKG_AUTO_UPDATE=true

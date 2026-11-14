@@ -1,0 +1,187 @@
+--- a/include/config/libinput.h
++++ b/include/config/libinput.h
+@@ -2,6 +2,8 @@
+ #ifndef LABWC_LIBINPUT_H
+ #define LABWC_LIBINPUT_H
+ 
++#include <wlr/config.h>
++#if WLR_HAS_LIBINPUT_BACKEND
+ #include <libinput.h>
+ #include <libxml/tree.h>
+ #include <string.h>
+@@ -62,4 +64,5 @@ bool libinput_curve_parse(xmlNode *node, struct lab_accel_curve *curve);
+ struct libinput_config_accel *libinput_custom_accel_create(
+ 	const struct libinput_category *category);
+ 
++#endif
+ #endif /* LABWC_LIBINPUT_H */
+--- a/clients/pool-buffer.c
++++ b/clients/pool-buffer.c
+@@ -10,11 +10,74 @@
+ #include <fcntl.h>
+ #include <pango/pangocairo.h>
+ #include <stdio.h>
++#include <string.h>
+ #include <sys/mman.h>
+ #include <time.h>
+ #include <unistd.h>
+ #include "pool-buffer.h"
+ 
++#ifdef __ANDROID__
++#include <alloca.h>
++static int shm_unlink(const char *name) {
++    size_t namelen;
++    char *fname;
++
++    /* Construct the filename.  */
++    while (name[0] == '/') ++name;
++
++    if (name[0] == '\0') {
++        /* The name "/" is not supported.  */
++        errno = EINVAL;
++        return -1;
++    }
++
++    namelen = strlen(name);
++    fname = (char *) alloca(sizeof("@TERMUX_PREFIX@/tmp/") - 1 + namelen + 1);
++    memcpy(fname, "@TERMUX_PREFIX@/tmp/", sizeof("@TERMUX_PREFIX@/tmp/") - 1);
++    memcpy(fname + sizeof("@TERMUX_PREFIX@/tmp/") - 1, name, namelen + 1);
++
++    return unlink(fname);
++}
++
++static int shm_open(const char *name, int oflag, mode_t mode) {
++    size_t namelen;
++    char *fname;
++    int fd;
++
++    /* Construct the filename.  */
++    while (name[0] == '/') ++name;
++
++    if (name[0] == '\0') {
++        /* The name "/" is not supported.  */
++        errno = EINVAL;
++        return -1;
++    }
++
++    namelen = strlen(name);
++    fname = (char *) alloca(sizeof("@TERMUX_PREFIX@/tmp/") - 1 + namelen + 1);
++    memcpy(fname, "@TERMUX_PREFIX@/tmp/", sizeof("@TERMUX_PREFIX@/tmp/") - 1);
++    memcpy(fname + sizeof("@TERMUX_PREFIX@/tmp/") - 1, name, namelen + 1);
++
++    fd = open(fname, oflag, mode);
++    if (fd != -1) {
++        /* We got a descriptor.  Now set the FD_CLOEXEC bit.  */
++        int flags = fcntl(fd, F_GETFD, 0);
++        flags |= FD_CLOEXEC;
++        flags = fcntl(fd, F_SETFD, flags);
++
++        if (flags == -1) {
++            /* Something went wrong.  We cannot return the descriptor.  */
++            int save_errno = errno;
++            close(fd);
++            fd = -1;
++            errno = save_errno;
++        }
++    }
++
++    return fd;
++}
++#endif
++
+ static int anonymous_shm_open(void)
+ {
+ 	int retries = 100;
+--- a/src/config/libinput.c
++++ b/src/config/libinput.c
+@@ -7,6 +7,7 @@
+ #include "common/string-helpers.h"
+ #include "config/rcxml.h"
+ 
++#if WLR_HAS_LIBINPUT_BACKEND
+ static void
+ libinput_category_init(struct libinput_category *l)
+ {
+@@ -98,3 +99,4 @@ libinput_category_get_default(void)
+ 	}
+ 	return NULL;
+ }
++#endif
+--- a/src/config/rcxml.c
++++ b/src/config/rcxml.c
+@@ -704,6 +704,7 @@ fill_tablet_button_map(xmlNode *node)
+ 	tablet_button_mapping_add(map_from, map_to);
+ }
+ 
++#if WLR_HAS_LIBINPUT_BACKEND
+ static int
+ get_accel_profile(const char *s)
+ {
+@@ -976,6 +977,7 @@ fill_libinput_category(xmlNode *node)
+ 		}
+ 	}
+ }
++#endif
+ 
+ static void
+ set_font_attr(struct font *font, const char *nodename, const char *content)
+@@ -1149,8 +1151,10 @@ entry(xmlNode *node, char *nodename, char *content)
+ 		fill_mouse_context(node);
+ 	} else if (!strcasecmp(nodename, "touch")) {
+ 		fill_touch(node);
++#if WLR_HAS_LIBINPUT_BACKEND
+ 	} else if (!strcasecmp(nodename, "device.libinput")) {
+ 		fill_libinput_category(node);
++#endif
+ 	} else if (!strcasecmp(nodename, "regions")) {
+ 		fill_regions(node);
+ 	} else if (!strcasecmp(nodename, "fields.windowSwitcher")) {
+@@ -1910,6 +1914,7 @@ post_processing(void)
+ 	if (!rc.font_osd.name) {
+ 		rc.font_osd.name = xstrdup("sans");
+ 	}
++#if WLR_HAS_LIBINPUT_BACKEND
+ 	if (!libinput_category_get_default()) {
+ 		/* So we set default values of <tap> and <scrollFactor> */
+ 		struct libinput_category *l = libinput_category_create();
+@@ -1926,6 +1931,7 @@ post_processing(void)
+ 			l->scroll_factor = mouse_scroll_factor;
+ 		}
+ 	}
++#endif
+ 
+ 	int nr_workspaces = wl_list_length(&rc.workspace_config.workspaces);
+ 	if (nr_workspaces < rc.workspace_config.min_nr_workspaces) {
+@@ -2154,12 +2160,14 @@ rcxml_finish(void)
+ 		zfree(touch_config);
+ 	}
+ 
++#if WLR_HAS_LIBINPUT_BACKEND
+ 	struct libinput_category *l, *l_tmp;
+ 	wl_list_for_each_safe(l, l_tmp, &rc.libinput_categories, link) {
+ 		wl_list_remove(&l->link);
+ 		zfree(l->name);
+ 		zfree(l);
+ 	}
++#endif
+ 
+ 	struct workspace_config *w, *w_tmp;
+ 	wl_list_for_each_safe(w, w_tmp, &rc.workspace_config.workspaces, link) {
+--- a/src/config/accel.c
++++ b/src/config/accel.c
+@@ -8,6 +8,7 @@
+ #include "common/parse-double.h"
+ #include "common/xml.h"
+ 
++#if WLR_HAS_LIBINPUT_BACKEND
+ static bool
+ parse_points(const char *content, struct lab_accel_curve *curve)
+ {
+@@ -70,7 +71,6 @@ libinput_curve_parse(xmlNode *node, struct lab_accel_curve *curve)
+ 	return true;
+ }
+ 
+-#if WLR_HAS_LIBINPUT_BACKEND
+ struct libinput_config_accel *
+ libinput_custom_accel_create(const struct libinput_category *category)
+ {

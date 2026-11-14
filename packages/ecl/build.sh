@@ -1,14 +1,14 @@
 TERMUX_PKG_HOMEPAGE=https://common-lisp.net/project/ecl/
-TERMUX_PKG_DESCRIPTION="ECL (Embeddable Common Lisp) is an interpreter of the Common Lisp language."
+TERMUX_PKG_DESCRIPTION="ECL (Embeddable Common Lisp) is an interpreter of the Common Lisp language"
 TERMUX_PKG_LICENSE="LGPL-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION="20.4.24"
+TERMUX_PKG_VERSION="26.5.5"
 TERMUX_PKG_SRCURL=https://common-lisp.net/project/ecl/static/files/release/ecl-${TERMUX_PKG_VERSION}.tgz
-TERMUX_PKG_SHA256=670838edf258a936b522fdb620da336de7e575aa0d27e34841727252726d0f07
+TERMUX_PKG_SHA256=a01a5bcda8c5b73e59dda3494fd13e5fec5db6aa1dad782c3cc3bb57f1633435
 TERMUX_PKG_DEPENDS="libandroid-support, libgmp, libgc, libffi"
 TERMUX_PKG_HOSTBUILD=true
 TERMUX_PKG_NO_STATICSPLIT=true
-TERMUX_PKG_BLACKLISTED_ARCHES="i686, x86_64"
+TERMUX_PKG_EXCLUDED_ARCHES="i686, x86_64"
 TERMUX_PKG_HAS_DEBUG=false
 
 # See https://gitlab.com/embeddable-common-lisp/ecl/-/blob/develop/INSTALL
@@ -16,12 +16,21 @@ TERMUX_PKG_HAS_DEBUG=false
 
 # ECL needs itself during build, so we need to build it for the host first.
 termux_step_host_build() {
-	srcdir=$TERMUX_PKG_SRCDIR/src
-	hostprefix=$TERMUX_PKG_HOSTBUILD_DIR/prefix
-	mkdir $hostprefix
-	$srcdir/configure --prefix=$hostprefix --srcdir=$srcdir --disable-c99complex
+	local _PREFIX_FOR_BUILD=$TERMUX_PKG_HOSTBUILD_DIR/prefix
+
+	local srcdir=$TERMUX_PKG_SRCDIR/src
+	mkdir $_PREFIX_FOR_BUILD
+	autoreconf -fi $srcdir/gmp
+	$srcdir/configure ABI=${TERMUX_ARCH_BITS} \
+		CFLAGS=-m${TERMUX_ARCH_BITS} LDFLAGS=-m${TERMUX_ARCH_BITS} \
+		--prefix=$_PREFIX_FOR_BUILD --srcdir=$srcdir --disable-c99complex
 	make
 	make install
+}
+
+termux_step_pre_configure() {
+	local srcdir=$TERMUX_PKG_SRCDIR/src
+	autoreconf -fi $srcdir
 }
 
 termux_step_configure() {
@@ -34,7 +43,7 @@ termux_step_configure() {
 	crossconfig="$TERMUX_PKG_SRCDIR/src/util/$crossconfig.cross_config"
 	export ECL_TO_RUN=$TERMUX_PKG_HOSTBUILD_DIR/prefix/bin/ecl
 
-	srcdir=$TERMUX_PKG_SRCDIR/src
+	local srcdir=$TERMUX_PKG_SRCDIR/src
 	$srcdir/configure \
 		--srcdir=$srcdir \
 		--prefix=$TERMUX_PREFIX \

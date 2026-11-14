@@ -1,0 +1,94 @@
+--- a/js/ui/ibusCandidatePopup.js
++++ b/js/ui/ibusCandidatePopup.js
+@@ -359,12 +359,12 @@ class IbusCandidatePopup extends BoxPointer.BoxPointer {
+             for (let i = 0; (indexLabel = lookupTable.get_label(i)); ++i)
+                 indexes.push(indexLabel.get_text());
+ 
+-            Main.virtualKeyboardManager.resetSuggestions();
++            if (Main.virtualKeyboardManager) Main.virtualKeyboardManager.resetSuggestions();
+ 
+             let candidates = [];
+             for (let i = startIndex; i < endIndex; ++i) {
+                 candidates.push(lookupTable.get_candidate(i).get_text());
+-                Main.virtualKeyboardManager.addSuggestion(lookupTable.get_candidate(i).get_text(), () => {
++                if (Main.virtualKeyboardManager) Main.virtualKeyboardManager.addSuggestion(lookupTable.get_candidate(i).get_text(), () => {
+                     let index = i;
+                     this._panelService.candidate_clicked(index, 1, 0);
+                 });
+@@ -388,7 +388,7 @@ class IbusCandidatePopup extends BoxPointer.BoxPointer {
+         panelService.connect('focus-out', () => {
+             this._loseTextFocus();
+             this.close(BoxPointer.PopupAnimation.NONE);
+-            Main.virtualKeyboardManager.resetSuggestions();
++            if (Main.virtualKeyboardManager) Main.virtualKeyboardManager.resetSuggestions();
+         });
+     }
+ 
+@@ -434,7 +434,7 @@ class IbusCandidatePopup extends BoxPointer.BoxPointer {
+     }
+ 
+     _updateVisibility() {
+-        let isVisible = !Main.virtualKeyboardManager.visible &&
++        let isVisible = !(Main.virtualKeyboardManager && Main.virtualKeyboardManager.visible) &&
+                          (this._preeditText.visible ||
+                           this._auxText.visible ||
+                           this._candidateArea.visible);
+--- a/js/ui/main.js
++++ b/js/ui/main.js
+@@ -102,7 +102,7 @@ var AppletManager = imports.ui.appletManager;
+ const SearchProviderManager = imports.ui.searchProviderManager;
+ const DeskletManager = imports.ui.deskletManager;
+ const ExtensionSystem = imports.ui.extensionSystem;
+-const VirtualKeyboard = imports.ui.virtualKeyboard;
++// const VirtualKeyboard = imports.ui.virtualKeyboard;
+ const MessageTray = imports.ui.messageTray;
+ const OsdWindow = imports.ui.osdWindow;
+ const Overview = imports.ui.overview;
+@@ -609,13 +609,13 @@ function start() {
+             inputMethod = new InputMethod.InputMethod();
+         Clutter.get_default_backend().set_input_method(inputMethod);
+     }
+-    virtualKeyboardManager = new VirtualKeyboard.VirtualKeyboardManager();
+-    virtualKeyboardManager.connect("enabled-changed", () => {
+-        if (runDialog !== null) {
+-            runDialog.destroy();
+-            runDialog = null;
+-        }
+-    });
++    // virtualKeyboardManager = new VirtualKeyboard.VirtualKeyboardManager();
++    // virtualKeyboardManager.connect("enabled-changed", () => {
++    //     if (runDialog !== null) {
++    //         runDialog.destroy();
++    //         runDialog = null;
++    //     }
++    // });
+ 
+     screensaverController = new ScreensaverController.ScreensaverController();
+ 
+@@ -2044,7 +2044,7 @@ function restartCinnamon(showOsd = false) {
+         return false;
+     });
+ 
+-    virtualKeyboardManager.destroyKeyboard();
++    virtualKeyboardManager?.destroyKeyboard();
+ 
+     global.reexec_self();
+ }
+@@ -2074,5 +2074,5 @@ function closeEndSessionDialog() {
+ 
+ function toggleKeyboard() {
+     if (!screensaverController?.toggleScreensaverKeyboard())
+-        virtualKeyboardManager.manualToggle();
++        virtualKeyboardManager?.manualToggle();
+ }
+--- a/js/ui/popupMenu.js
++++ b/js/ui/popupMenu.js
+@@ -2945,7 +2945,7 @@ var PopupMenuManager = class PopupMenuManager {
+         if (!this.grabbed)
+             return false;
+ 
+-        if (Main.virtualKeyboardManager.shouldTakeEvent(event))
++        if (Main.virtualKeyboardManager && Main.virtualKeyboardManager.shouldTakeEvent(event))
+             return Clutter.EVENT_PROPAGATE;
+ 
+         if (this._owner.menuEventFilter &&

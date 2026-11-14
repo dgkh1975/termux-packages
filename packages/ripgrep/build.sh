@@ -2,26 +2,29 @@ TERMUX_PKG_HOMEPAGE=https://github.com/BurntSushi/ripgrep
 TERMUX_PKG_DESCRIPTION="Search tool like grep and The Silver Searcher"
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=12.1.1
-TERMUX_PKG_REVISION=1
-TERMUX_PKG_SRCURL=https://github.com/BurntSushi/ripgrep/archive/$TERMUX_PKG_VERSION.tar.gz
-TERMUX_PKG_SHA256=2513338d61a5c12c8fea18a0387b3e0651079ef9b31f306050b1f0aaa926271e
+TERMUX_PKG_VERSION="15.2.0"
+TERMUX_PKG_SRCURL="https://github.com/BurntSushi/ripgrep/archive/refs/tags/$TERMUX_PKG_VERSION.tar.gz"
+TERMUX_PKG_SHA256=7605249d3eb0d5f170e3414498e3344e26b1e7a147aec518b57090b80036a562
+TERMUX_PKG_DEPENDS="pcre2"
+TERMUX_PKG_RECOMMENDS="brotli, lz4"
 TERMUX_PKG_BUILD_IN_SRC=true
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="--features pcre2"
+TERMUX_PKG_AUTO_UPDATE=true
+
+termux_step_pre_configure() {
+	termux_setup_rust
+}
 
 termux_step_post_make_install() {
-	# Install man page:
-	mkdir -p $TERMUX_PREFIX/share/man/man1/
-	cp $(find . -name rg.1) $TERMUX_PREFIX/share/man/man1/
+	# shell completions
+	mkdir -p "${TERMUX_PREFIX}/share/zsh/site-functions"
+	mkdir -p "${TERMUX_PREFIX}/share/bash-completion/completions"
+	mkdir -p "${TERMUX_PREFIX}/share/fish/vendor_completions.d"
+	cargo run -- --generate complete-bash > "${TERMUX_PREFIX}/share/bash-completion/completions/rg"
+	cargo run -- --generate complete-fish > "${TERMUX_PREFIX}/share/fish/vendor_completions.d/rg.fish"
+	cargo run -- --generate complete-zsh  > "${TERMUX_PREFIX}/share/zsh/site-functions/_rg"
 
-	# Install bash completion script:
-	mkdir -p $TERMUX_PREFIX/share/bash-completion/completions/
-	cp $(find . -name rg.bash) $TERMUX_PREFIX/share/bash-completion/completions/rg
-
-	# Install fish completion script:
-	mkdir -p $TERMUX_PREFIX/share/fish/completions/
-	cp $(find . -name rg.fish) $TERMUX_PREFIX/share/fish/completions/
-
-	# Install zsh completion script:
-	mkdir -p $TERMUX_PREFIX/share/zsh/site-functions/
-	cp complete/_rg $TERMUX_PREFIX/share/zsh/site-functions/
+	# Man page
+	mkdir -p "${TERMUX_PREFIX}/share/man/man1"
+	cargo run -- --generate man > "${TERMUX_PREFIX}/share/man/man1/${TERMUX_PKG_NAME}.1"
 }

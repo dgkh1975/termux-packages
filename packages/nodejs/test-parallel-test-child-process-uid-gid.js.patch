@@ -1,0 +1,13 @@
+--- a/test/parallel/test-child-process-uid-gid.js
++++ b/test/parallel/test-child-process-uid-gid.js
+@@ -4,6 +4,10 @@ const assert = require('assert');
+ const spawn = require('child_process').spawn;
+ const expectedError = common.isWindows ? /\bENOTSUP\b/ : /\bEPERM\b/;
+ 
++if (process.platform === 'android') {
++  common.skip('We are patching node to not use setuid/setgid with child_process.spawn in anyway');
++}
++
+ if (common.isIBMi)
+   common.skip('IBMi has a different behavior');
+ 

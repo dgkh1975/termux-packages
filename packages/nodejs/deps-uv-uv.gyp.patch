@@ -1,21 +1,28 @@
-diff -u -r ../node-v9.7.1/deps/uv/uv.gyp ./deps/uv/uv.gyp
---- ../node-v9.7.1/deps/uv/uv.gyp	2018-03-02 01:58:02.000000000 +0000
-+++ ./deps/uv/uv.gyp	2018-03-05 10:51:15.530165566 +0000
-@@ -39,7 +39,7 @@
-     {
+--- a/deps/uv/uv.gyp
++++ b/deps/uv/uv.gyp
+@@ -155,7 +155,7 @@
        'target_name': 'libuv',
+       'toolsets': ['host', 'target'],
        'type': '<(uv_library)',
 -      'include_dirs': [
 +      'include_dirs+': [
          'include',
          'src/',
        ],
-@@ -54,7 +54,7 @@
+@@ -170,7 +170,7 @@
            '<@(shared_unix_defines)',
            '<@(shared_zos_defines)',
          ],
 -        'include_dirs': [ 'include' ],
 +        'include_dirs+': [ 'include' ],
          'conditions': [
-           ['OS == "linux"', {
+           ['OS == "linux" or OS=="openharmony"', {
              'defines': [ '_POSIX_C_SOURCE=200112' ],
+@@ -307,6 +307,7 @@
+             '_XOPEN_SOURCE=500',
+             '_REENTRANT',
+           ],
++          'defines': [ '__USE_GNU' ],
+           'link_settings': {
+             'libraries': [
+               '-lkstat',

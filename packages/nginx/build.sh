@@ -2,12 +2,13 @@ TERMUX_PKG_HOMEPAGE=https://www.nginx.org
 TERMUX_PKG_DESCRIPTION="Lightweight HTTP server"
 TERMUX_PKG_LICENSE="BSD 2-Clause"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.19.6
-TERMUX_PKG_SRCURL=http://nginx.org/download/nginx-$TERMUX_PKG_VERSION.tar.gz
-TERMUX_PKG_SHA256=b11195a02b1d3285ddf2987e02c6b6d28df41bb1b1dd25f33542848ef4fc33b5
-TERMUX_PKG_DEPENDS="libandroid-glob, libcrypt, pcre, openssl, zlib"
+TERMUX_PKG_VERSION="1.31.8"
+TERMUX_PKG_SRCURL=https://nginx.org/download/nginx-$TERMUX_PKG_VERSION.tar.gz
+TERMUX_PKG_SHA256=0652b760b3b772d2ec17b47c2fc15d9a95e6fe35cd5b877eadc1a62d9bc75af1
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="libandroid-glob, libcrypt, pcre2, openssl, zlib"
 TERMUX_PKG_BUILD_IN_SRC=true
-TERMUX_PKG_SERVICE_SCRIPT=("nginx" 'mkdir -p ~/.nginx\nif [ -f "$HOME/.nginx/nginx.conf" ]; then CONFIG="$HOME/.nginx/nginx.conf"; else CONFIG="$PREFIX/etc/nginx/nginx.conf"; fi\nexec nginx -p ~/.nginx -g "daemon off;" -c $CONFIG 2>&1')
+TERMUX_PKG_SERVICE_SCRIPT=("nginx" "mkdir -p $TERMUX_ANDROID_HOME/.nginx\nif [ -f \"$TERMUX_ANDROID_HOME/.nginx/nginx.conf\" ]; then CONFIG=\"$TERMUX_ANDROID_HOME/.nginx/nginx.conf\"; else CONFIG=\"$TERMUX_PREFIX/etc/nginx/nginx.conf\"; fi\nexec nginx -p ~/.nginx -g \"daemon off;\" -c \$CONFIG 2>&1")
 TERMUX_PKG_CONFFILES="
 etc/nginx/fastcgi.conf
 etc/nginx/fastcgi_params
@@ -29,13 +30,16 @@ termux_step_pre_configure() {
 	CPPFLAGS="$CPPFLAGS -DIOV_MAX=1024"
 	LDFLAGS="$LDFLAGS -landroid-glob"
 
+	# for cpu_set_t
+	CPPFLAGS+=" -D__USE_GNU=1"
+
 	# remove config from previous installs
 	rm -rf "$TERMUX_PREFIX/etc/nginx"
 }
 
 termux_step_configure() {
 	DEBUG_FLAG=""
-	$TERMUX_DEBUG && DEBUG_FLAG="--with-debug"
+	$TERMUX_DEBUG_BUILD && DEBUG_FLAG="--with-debug"
 
 	./configure \
 		--prefix=$TERMUX_PREFIX \
@@ -45,10 +49,7 @@ termux_step_configure() {
 		--with-cpp=$CPP \
 		--with-cc-opt="$CPPFLAGS $CFLAGS" \
 		--with-ld-opt="$LDFLAGS" \
-		--with-pcre \
-		--with-pcre-jit \
 		--with-threads \
-		--with-ipv6 \
 		--sbin-path="$TERMUX_PREFIX/bin/nginx" \
 		--conf-path="$TERMUX_PREFIX/etc/nginx/nginx.conf" \
 		--http-log-path="$TERMUX_PREFIX/var/log/nginx/access.log" \
@@ -61,9 +62,17 @@ termux_step_configure() {
 		--http-scgi-temp-path="$TERMUX_PREFIX/var/lib/nginx/scgi" \
 		--http-uwsgi-temp-path="$TERMUX_PREFIX/var/lib/nginx/uwsgi" \
 		--with-http_auth_request_module \
+		--with-http_realip_module \
 		--with-http_ssl_module \
 		--with-http_v2_module \
+		--with-http_v3_module \
 		--with-http_gunzip_module \
+		--with-http_sub_module \
+		--with-http_dav_module \
+		--with-stream \
+		--with-stream_realip_module \
+		--with-stream_ssl_module \
+		--with-stream_ssl_preread_module \
 		$DEBUG_FLAG
 }
 
@@ -77,8 +86,7 @@ termux_step_post_make_install() {
 	rm "$TERMUX_PREFIX"/etc/nginx/*.default
 
 	# move default html dir
-	sed -e "44s|html|$TERMUX_PREFIX/share/nginx/html|" \
-		-e "54s|html|$TERMUX_PREFIX/share/nginx/html|" \
+	sed -e "s| html;| $TERMUX_PREFIX/share/nginx/html;|" \
 		-i "$TERMUX_PREFIX/etc/nginx/nginx.conf"
 	rm -rf "$TERMUX_PREFIX/share/nginx"
 	mkdir -p "$TERMUX_PREFIX/share/nginx"

@@ -2,9 +2,10 @@ TERMUX_PKG_HOMEPAGE=https://github.com/kkdai/youtube
 TERMUX_PKG_DESCRIPTION="Download youtube video in Golang"
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_MAINTAINER="Krishna kanhaiya @kcubeterm"
-TERMUX_PKG_VERSION=2.4.0
-TERMUX_PKG_SRCURL=https://github.com/kkdai/youtube/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=aa5d5de395aa46dd30eda6e08b827fc23d1d1d920640ee6a8ee9a5e33fd7bbe0
+TERMUX_PKG_VERSION="2.10.8"
+TERMUX_PKG_SRCURL=https://github.com/kkdai/youtube/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=14ea78ee215a017e8cffa85b3de34f69063c9619ae13eb0154229a67362b03ab
+TERMUX_PKG_AUTO_UPDATE=true
 
 termux_step_make() {
 	termux_setup_golang
@@ -21,4 +22,17 @@ termux_step_make() {
 
 termux_step_make_install() {
 	install -Dm700 -t "$TERMUX_PREFIX"/bin "$GOPATH"/src/github.com/kkdai/youtube/cmd/youtubedr/youtubedr
+
+	install -Dm644 /dev/null "$TERMUX_PREFIX"/share/bash-completion/completions/youtubedr
+	install -Dm644 /dev/null "$TERMUX_PREFIX"/share/zsh/site-functions/_youtubedr
+	install -Dm644 /dev/null "$TERMUX_PREFIX"/share/fish/vendor_completions.d/youtubedr.fish
+}
+
+termux_step_create_debscripts() {
+	cat <<-EOF >./postinst
+		#!${TERMUX_PREFIX}/bin/sh
+		youtubedr completion bash > ${TERMUX_PREFIX}/share/bash-completion/completions/youtubedr
+		youtubedr completion zsh > ${TERMUX_PREFIX}/share/zsh/site-functions/_youtubedr
+		youtubedr completion fish > ${TERMUX_PREFIX}/share/fish/vendor_completions.d/youtubedr.fish
+	EOF
 }

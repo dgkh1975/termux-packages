@@ -1,9 +1,16 @@
-TERMUX_PKG_HOMEPAGE=http://byobu.co/
+TERMUX_PKG_HOMEPAGE=https://www.byobu.org/
 TERMUX_PKG_DESCRIPTION="Byobu is a GPLv3 open source text-based window manager and terminal multiplexer"
 TERMUX_PKG_LICENSE="GPL-3.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=5.133
-TERMUX_PKG_SRCURL=https://launchpad.net/byobu/trunk/${TERMUX_PKG_VERSION}/+download/byobu_${TERMUX_PKG_VERSION}.orig.tar.gz
-TERMUX_PKG_SHA256=4d8ea48f8c059e56f7174df89b04a08c32286bae5a21562c5c6f61be6dab7563
+TERMUX_PKG_VERSION="7.23"
+TERMUX_PKG_SRCURL="https://github.com/dustinkirkland/byobu/archive/refs/tags/${TERMUX_PKG_VERSION}.tar.gz"
+TERMUX_PKG_SHA256=2c6bb133d717cd3333fbddef22fc27f1d8914ffd066c1b044b233186cbb35aa0
+TERMUX_PKG_UPDATE_VERSION_REGEXP='\d+\.\d+(?!rc)'
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_UPDATE_TAG_TYPE="newest-tag"
 TERMUX_PKG_DEPENDS="gawk, tmux"
 TERMUX_PKG_PLATFORM_INDEPENDENT=true
+
+termux_step_pre_configure() {
+	autoreconf -fiv
+}

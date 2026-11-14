@@ -1,34 +1,56 @@
 # Utility function for golang-using packages to setup a go toolchain.
 termux_setup_golang() {
-	if [ "$TERMUX_ON_DEVICE_BUILD" = "false" ]; then
-		local TERMUX_GO_VERSION=go1.15.6
+	export GOPATH="${TERMUX_COMMON_CACHEDIR}/go-path" GOCACHE="${TERMUX_COMMON_CACHEDIR}/go-build"
+	mkdir -p "$GOPATH" "$GOCACHE"
+	if [[ "$TERMUX_ON_DEVICE_BUILD" == "false" ]]; then
+		local TERMUX_GO_VERSION=go1.27.3
+		local TERMUX_GO_SHA256=65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40
 		local TERMUX_GO_PLATFORM=linux-amd64
 
 		local TERMUX_BUILDGO_FOLDER
-		if [ "${TERMUX_PACKAGES_OFFLINE-false}" = "true" ]; then
-			TERMUX_BUILDGO_FOLDER=${TERMUX_SCRIPTDIR}/build-tools/${TERMUX_GO_VERSION}
-		else
-			TERMUX_BUILDGO_FOLDER=${TERMUX_COMMON_CACHEDIR}/${TERMUX_GO_VERSION}
+		TERMUX_BUILDGO_FOLDER="${TERMUX_COMMON_CACHEDIR}/${TERMUX_GO_VERSION}"
+		if [[ "${TERMUX_PACKAGES_OFFLINE-false}" == "true" ]]; then
+			TERMUX_BUILDGO_FOLDER="${TERMUX_SCRIPTDIR}/build-tools/${TERMUX_GO_VERSION}"
 		fi
 
-		export GOROOT=$TERMUX_BUILDGO_FOLDER
-		export PATH=${GOROOT}/bin:${PATH}
+		TERMUX_BUILDGO_FOLDER+="-r1"
 
-		if [ -d "$TERMUX_BUILDGO_FOLDER" ]; then return; fi
+		export GOROOT="$TERMUX_BUILDGO_FOLDER"
+		export PATH="${GOROOT}/bin:${PATH}"
 
-		local TERMUX_BUILDGO_TAR=$TERMUX_COMMON_CACHEDIR/${TERMUX_GO_VERSION}.${TERMUX_GO_PLATFORM}.tar.gz
-		rm -Rf "$TERMUX_COMMON_CACHEDIR/go" "$TERMUX_BUILDGO_FOLDER"
-		termux_download https://golang.org/dl/${TERMUX_GO_VERSION}.${TERMUX_GO_PLATFORM}.tar.gz \
+		if [[ -d "$TERMUX_BUILDGO_FOLDER" ]]; then
+			return
+		fi
+
+		local TERMUX_BUILDGO_TAR="$TERMUX_COMMON_CACHEDIR/${TERMUX_GO_VERSION}.${TERMUX_GO_PLATFORM}.tar.gz"
+		rm -rf "$TERMUX_COMMON_CACHEDIR/go" "$TERMUX_BUILDGO_FOLDER"
+		termux_download "https://go.dev/dl/${TERMUX_GO_VERSION}.${TERMUX_GO_PLATFORM}.tar.gz" \
 			"$TERMUX_BUILDGO_TAR" \
-		        3918e6cc85e7eaaa6f859f1bdbaac772e7a825b0eb423c63d3ae68b21f84b844
+			"$TERMUX_GO_SHA256"
 
-		( cd "$TERMUX_COMMON_CACHEDIR"; tar xf "$TERMUX_BUILDGO_TAR"; mv go "$TERMUX_BUILDGO_FOLDER"; rm "$TERMUX_BUILDGO_TAR" )
+		(
+			cd "$TERMUX_COMMON_CACHEDIR"
+			tar xf "$TERMUX_BUILDGO_TAR"
+			mv go "$TERMUX_BUILDGO_FOLDER"
+			rm "$TERMUX_BUILDGO_TAR"
+		)
+
+		(
+			cd "$TERMUX_BUILDGO_FOLDER"
+			. "${TERMUX_SCRIPTDIR}/packages/golang/patch-script/fix-hardcoded-etc-resolv-conf.sh"
+			. "${TERMUX_SCRIPTDIR}/packages/golang/patch-script/remove-pidfd.sh"
+			. "${TERMUX_SCRIPTDIR}/packages/golang/patch-script/remove-futex_time64.sh"
+			. "${TERMUX_SCRIPTDIR}/packages/golang/patch-script/fix-android-netlink.sh"
+		)
 	else
-		if [ "$(dpkg-query -W -f '${db:Status-Status}\n' golang 2>/dev/null)" != "installed" ]; then
+		if [[ "$TERMUX_APP_PACKAGE_MANAGER" == "apt" && "$(dpkg-query -W -f '${db:Status-Status}\n' golang 2>/dev/null)" != "installed" ]] ||
+		[[ "$TERMUX_APP_PACKAGE_MANAGER" == "pacman" && ! "$(pacman -Q golang 2>/dev/null)" ]]; then
 			echo "Package 'golang' is not installed."
 			echo "You can install it with"
 			echo
 			echo "  pkg install golang"
+			echo
+			echo "  pacman -S golang"
 			echo
 			echo "or build it from source with"
 			echo
@@ -37,6 +59,6 @@ termux_setup_golang() {
 			exit 1
 		fi
 
-		export GOROOT="$TERMUX_PREFIX/lib/go"
+		export GOROOT="$TERMUX__PREFIX__LIB_DIR/go"
 	fi
 }

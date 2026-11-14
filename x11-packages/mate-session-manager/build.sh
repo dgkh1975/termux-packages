@@ -1,0 +1,9 @@
+TERMUX_PKG_HOMEPAGE="https://github.com/mate-desktop/mate-session-manager"
+TERMUX_PKG_DESCRIPTION="mate-session contains the MATE session manager, as well as a configuration program to choose applications starting on login."
+TERMUX_PKG_LICENSE="GPL-2.0"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION="1.29.0"
+TERMUX_PKG_SRCURL=https://github.com/mate-desktop/mate-session-manager/releases/download/v$TERMUX_PKG_VERSION/mate-session-manager-$TERMUX_PKG_VERSION.tar.xz
+TERMUX_PKG_SHA256=8ec84047981d6e8fe348b4906726e96881cca1d2e31c9aa176612966fe18cc4f
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="dbus, dbus-glib, gdk-pixbuf, glib, gtk3, libcairo, libepoxy, libice, libsm, libx11, libxau, libxcomposite, libxext, libxrender, libxtst, opengl"

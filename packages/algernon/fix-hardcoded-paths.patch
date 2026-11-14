@@ -1,8 +1,16 @@
-diff -uNr algernon-1.12.7/engine/config.go algernon-1.12.7.mod/engine/config.go
---- algernon-1.12.7/engine/config.go	2020-03-24 22:48:26.000000000 +0200
-+++ algernon-1.12.7.mod/engine/config.go	2020-03-29 22:25:30.231409340 +0300
-@@ -289,7 +289,7 @@
- 		defaultLuaDataFilename: "data.lua",
+--- a/engine/config.go
++++ b/engine/config.go
+@@ -192,7 +192,7 @@
+ 
+ // New creates a new server configuration based using the default values
+ func New(versionString, description string) (*Config, error) {
+-	tmpdir := env.Str("TMPDIR", "/tmp")
++	tmpdir := env.Str("TMPDIR", "@TERMUX_PREFIX@/tmp")
+ 	ac := &Config{
+ 		curlSupport: true,
+ 
+@@ -226,7 +226,7 @@
+ 		defaultLogFile: filepath.Join(tmpdir, "algernon.log"),
  
  		// List of configuration filenames to check
 -		serverConfigurationFilenames: []string{"/etc/algernon/serverconf.lua", "/etc/algernon/server.lua"},
@@ -10,47 +18,51 @@ diff -uNr algernon-1.12.7/engine/config.go algernon-1.12.7.mod/engine/config.go
  
  		// Compression speed over compactness
  		cacheCompressionSpeed: true,
-diff -uNr algernon-1.12.7/engine/flags.go algernon-1.12.7.mod/engine/flags.go
---- algernon-1.12.7/engine/flags.go	2020-03-24 22:48:26.000000000 +0200
-+++ algernon-1.12.7.mod/engine/flags.go	2020-03-29 22:24:25.286093743 +0300
-@@ -311,9 +311,9 @@
+@@ -258,7 +258,7 @@
+ 		return nil, err
+ 	}
+ 	// Read in the mimetype information from the system. Set UTF-8 when setting Content-Type.
+-	ac.mimereader = mime.New("/etc/mime.types", true)
++	ac.mimereader = mime.New("@TERMUX_PREFIX@/etc/mime.types", true)
+ 	ac.setupLogging()
+ 
+ 	// File stat cache
+--- a/engine/flags.go
++++ b/engine/flags.go
+@@ -269,9 +269,9 @@
  	switch {
  	case ac.productionMode:
  		// Use system directories
 -		ac.serverDirOrFilename = "/srv/algernon"
--		ac.serverCert = "/etc/algernon/cert.pem"
--		ac.serverKey = "/etc/algernon/key.pem"
+-		ac.serve.serverCert = "/etc/algernon/cert.pem"
+-		ac.serve.serverKey = "/etc/algernon/key.pem"
 +		ac.serverDirOrFilename = "@TERMUX_PREFIX@/var/lib/algernon"
-+		ac.serverCert = "@TERMUX_PREFIX@/etc/algernon/cert.pem"
-+		ac.serverKey = "@TERMUX_PREFIX@/etc/algernon/key.pem"
++		ac.serve.serverCert = "@TERMUX_PREFIX@/etc/algernon/cert.pem"
++		ac.serve.serverKey = "@TERMUX_PREFIX@/etc/algernon/key.pem"
  		ac.cacheMode = cachemode.Production
  		ac.serverMode = true
  	case ac.devMode:
-diff -uNr algernon-1.12.7/engine/mime.go algernon-1.12.7.mod/engine/mime.go
---- algernon-1.12.7/engine/mime.go	2020-03-24 22:48:26.000000000 +0200
-+++ algernon-1.12.7.mod/engine/mime.go	2020-03-29 22:24:25.286093743 +0300
-@@ -6,5 +6,5 @@
+--- a/engine/certstorage.go
++++ b/engine/certstorage.go
+@@ -22,7 +22,7 @@
  
- func (ac *Config) initializeMime() {
- 	// Read in the mimetype information from the system. Set UTF-8 when setting Content-Type.
--	ac.mimereader = mime.New("/etc/mime.types", true)
-+	ac.mimereader = mime.New("@TERMUX_PREFIX@/etc/mime.types", true)
- }
-diff -uNr algernon-1.12.7/vendor/github.com/go-sql-driver/mysql/dsn.go algernon-1.12.7.mod/vendor/github.com/go-sql-driver/mysql/dsn.go
---- algernon-1.12.7/vendor/github.com/go-sql-driver/mysql/dsn.go	2020-03-24 22:48:26.000000000 +0200
-+++ algernon-1.12.7.mod/vendor/github.com/go-sql-driver/mysql/dsn.go	2020-03-29 22:24:25.286093743 +0300
-@@ -111,7 +111,7 @@
- 		case "tcp":
- 			cfg.Addr = "127.0.0.1:3306"
- 		case "unix":
--			cfg.Addr = "/tmp/mysql.sock"
-+			cfg.Addr = "@TERMUX_PREFIX@/tmp/mysql.sock"
- 		default:
- 			return errors.New("default addr for network '" + cfg.Net + "' unknown")
- 		}
-diff -uNr algernon-1.12.7/vendor/github.com/xyproto/gopher-lua/utils.go algernon-1.12.7.mod/vendor/github.com/xyproto/gopher-lua/utils.go
---- algernon-1.12.7/vendor/github.com/xyproto/gopher-lua/utils.go	2020-03-24 22:48:26.000000000 +0200
-+++ algernon-1.12.7.mod/vendor/github.com/xyproto/gopher-lua/utils.go	2020-03-29 22:24:25.286093743 +0300
+ 	// systemCertStorageDir is used when there is no home directory,
+ 	// like when running as a system service
+-	systemCertStorageDir = "/var/lib/algernon"
++	systemCertStorageDir = "@TERMUX_PREFIX@/var/lib/algernon"
+ )
+ 
+ // certStorageDir returns the directory where Let's Encrypt certificates are kept.
+--- a/vendor/github.com/caddyserver/certmagic/dnsutil.go
++++ b/vendor/github.com/caddyserver/certmagic/dnsutil.go
+@@ -376,4 +376,4 @@
+ 	fqdnSOACacheMu sync.Mutex
+ )
+ 
+-const defaultResolvConf = "/etc/resolv.conf"
++const defaultResolvConf = "@TERMUX_PREFIX@/etc/resolv.conf"
+--- a/vendor/github.com/xyproto/gopher-lua/utils.go
++++ b/vendor/github.com/xyproto/gopher-lua/utils.go
 @@ -156,7 +156,7 @@
  }
  

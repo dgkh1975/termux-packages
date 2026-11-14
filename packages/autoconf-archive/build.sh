@@ -1,0 +1,10 @@
+TERMUX_PKG_HOMEPAGE=https://www.gnu.org/software/autoconf-archive/
+TERMUX_PKG_DESCRIPTION="A collection of freely re-usable Autoconf macros"
+TERMUX_PKG_LICENSE="GPL-3.0"
+TERMUX_PKG_LICENSE_FILE="COPYING, COPYING.EXCEPTION"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION="2026.11.11"
+TERMUX_PKG_SRCURL=https://mirrors.kernel.org/gnu/autoconf-archive/autoconf-archive-${TERMUX_PKG_VERSION}.tar.xz
+TERMUX_PKG_SHA256=2c18f15e2b3bb79e09622b27391df07d8608ce9f07fbfc7c1143fa683891ab26
+TERMUX_PKG_PLATFORM_INDEPENDENT=true
+TERMUX_PKG_AUTO_UPDATE=true

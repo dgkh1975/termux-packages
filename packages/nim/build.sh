@@ -1,56 +1,120 @@
 TERMUX_PKG_HOMEPAGE=https://nim-lang.org/
 TERMUX_PKG_DESCRIPTION="Nim programming language compiler"
 TERMUX_PKG_LICENSE="MIT"
-TERMUX_PKG_LICENSE_FILE="copying.txt"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.4.2
-TERMUX_PKG_SRCURL=https://nim-lang.org/download/nim-$TERMUX_PKG_VERSION.tar.xz
-TERMUX_PKG_SHA256=03a47583777dd81380a3407aa6a788c9aa8a67df4821025770c9ac4186291161
-TERMUX_PKG_DEPENDS="clang, git, libandroid-glob"
-TERMUX_PKG_HOSTBUILD=true
+TERMUX_PKG_VERSION="2.4.2"
+TERMUX_PKG_SRCURL="https://nim-lang.org/download/nim-$TERMUX_PKG_VERSION.tar.xz"
+TERMUX_PKG_SHA256=b28bf4da1fce46dba9d16685c981b3d5e98de8db1b60d66f279b0bd2af2d8211
+TERMUX_PKG_DEPENDS="clang, git, libandroid-glob, openssl, libandroid-spawn"
+TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_BUILD_IN_SRC=true
 
-termux_step_host_build() {
-	cp -r ../src/* ./
-	make -j $TERMUX_MAKE_PROCESSES CC=gcc LD=gcc
+termux_pkg_auto_update() {
+	local TERMUX_SETUP_NIM="${TERMUX_SCRIPTDIR}/scripts/build/setup/termux_setup_nim.sh"
+	local latest_version="$(termux_repology_api_get_latest_version "${TERMUX_PKG_NAME}")"
+	if [[ "${latest_version}" == "null" ]]; then
+		latest_version="${TERMUX_PKG_VERSION}"
+	fi
+	if [[ "${latest_version}" == "${TERMUX_PKG_VERSION}" ]]; then
+		echo "INFO: No update needed. Already at version '${TERMUX_PKG_VERSION}'."
+		return
+	fi
+
+	local TERMUX_NIM_TARNAME="nim-${latest_version}-linux_x64.tar.xz"
+	local TERMUX_NIM_URL="https://nim-lang.org/download/${TERMUX_NIM_TARNAME}"
+	local TERMUX_NIM_TARFILE="$(mktemp)"
+	curl -Ls "${TERMUX_NIM_URL}" -o "${TERMUX_NIM_TARFILE}"
+	local TERMUX_NIM_SHA256="$(sha256sum "${TERMUX_NIM_TARFILE}" | cut -d" " -f1)"
+
+	if [[ "${BUILD_PACKAGES}" == "false" ]]; then
+		echo "INFO: package needs to be updated to ${latest_version}."
+		return
+	fi
+
+	sed \
+		-e "s|local TERMUX_NIM_VERSION=.*|local TERMUX_NIM_VERSION=${latest_version}|" \
+		-e "s|local TERMUX_NIM_SHA256=.*|local TERMUX_NIM_SHA256=${TERMUX_NIM_SHA256}|" \
+		-i "${TERMUX_SETUP_NIM}"
+	rm -f "${TERMUX_NIM_TARFILE}"
+
+	termux_pkg_upgrade_version "${latest_version}"
+}
+
+termux_step_pre_configure() {
+	termux_setup_nim
+	declare -ag _NIM_TOOLS=(
+		"koch"
+		"dist/nimble/src/nimble"
+		"nimpretty/nimpretty"
+		"nimsuggest/nimsuggest"
+		"testament/testament"
+		"tools/nimgrep"
+	)
 }
 
 termux_step_make() {
-	if [ $TERMUX_ARCH = "x86_64" ]; then
-		export	NIM_ARCH=amd64
-	elif [ $TERMUX_ARCH = "i686" ]; then
-		export	NIM_ARCH=i386
-	elif [ $TERMUX_ARCH = "aarch64" ]; then
-		export NIM_ARCH=arm64
-	else
-		export NIM_ARCH=arm
-	fi
-	LDFLAGS+=" -landroid-glob"
-	sed -i "s%\@CC\@%${CC}%g"  config/nim.cfg
-	sed -i "s%\@CFLAGS\@%${CFLAGS}%g" config/nim.cfg
-	sed -i "s%\@LDFLAGS\@%${LDFLAGS}%g" config/nim.cfg
-	sed -i "s%\@CPPFLAGS\@%${CPPFLAGS}%g" config/nim.cfg
+	NIM_ARCH="$TERMUX_ARCH"
+	case "$TERMUX_ARCH" in
+		"aarch64") NIM_ARCH="arm64";;
+		"i686")    NIM_ARCH="i386";;
+		"x86_64")
+			NIM_ARCH="amd64"
+			sed -i 's/arm64/amd64/g' makefile
+			;;
+	esac
+	export NIM_ARCH
+	CFLAGS+=" $CPPFLAGS -w -fno-strict-aliasing"
+	LDFLAGS+=" -landroid-glob -landroid-spawn"
 
-	find -name "stdlib_osproc.nim.c" | xargs -n 1 sed -i 's',"/system/bin/sh\"\,\ 14","${TERMUX_PREFIX}/bin/sh\"\,\ 38",'g'
-	PATH=$TERMUX_PKG_HOSTBUILD_DIR/bin:$PATH
+	for cmd in "${_NIM_TOOLS[@]}"; do
+		case "$cmd" in
+			"koch") nim_flags="--opt:size";;
+			"dist/nimble/src/nimble") nim_flags="-d:nimNimbleBootstrap";; # See: https://github.com/nim-lang/nimble/issues/1248
+			*) nim_flags="";;
+		esac
+		(
+			cd "$(dirname "$cmd")" && \
+			nim \
+				--cc:clang \
+				--clang.exe="$CC" \
+				--clang.linkerexe="$CC" \
+				--cpu:"$NIM_ARCH" \
+				--define:termux \
+				--os:android \
+				-d:"tempDir:$TERMUX_PREFIX/tmp" \
+				-d:release \
+				-d:sslVersion=3 \
+				-l:"$LDFLAGS -landroid-glob" \
+				-t:"$CPPFLAGS $CFLAGS" \
+				$nim_flags \
+				c \
+				"$(basename "$cmd").nim"
+		)
+	done
 
-	if [ $NIM_ARCH = "amd64" ]; then
-		sed -i 's/arm64/amd64/g' makefile
-	fi
-	export CFLAGS=" $CPPFLAGS $CFLAGS  -w  -fno-strict-aliasing"
-	make LD=$CC uos=linux mycpu=$NIM_ARCH myos=android  -j $TERMUX_MAKE_PROCESSES useShPath=$TERMUX_PREFIX/bin/sh
-	cp config/nim.cfg ../host-build/config
+	sed -i \
+		-e "s|@CC@|${CC}|g" \
+		-e "s|@CFLAGS@|${CFLAGS}|g" \
+		-e "s|@LDFLAGS@|${LDFLAGS}|g" \
+		-e "s|@CPPFLAGS@|${CPPFLAGS}|g" \
+		config/nim.cfg
 
-	nim --cc:clang --clang.exe=$CC --clang.linkerexe=$CC --opt:size --define:termux -d:release --os:android --cpu:$NIM_ARCH  -t:"$CPPFLAGS $CFLAGS" -l:"$LDFLAGS -landroid-glob" c koch.nim
-	cd dist/nimble/src
-	nim --cc:clang --clang.exe=$CC --clang.linkerexe=$CC --define:termux -d:release --os:android --cpu:$NIM_ARCH  -t:"$CPPFLAGS $CFLAGS" -l:"$LDFLAGS -landroid-glob" c nimble.nim
+	make \
+		-j "$TERMUX_PKG_MAKE_PROCESSES" \
+		LD="$CC" \
+		mycpu="$NIM_ARCH" \
+		myos=android \
+		uos=linux \
+		useShPath="$TERMUX_PREFIX/bin/sh"
 }
 
 termux_step_make_install() {
-	./install.sh $TERMUX_PREFIX/lib
-	cp koch $TERMUX_PREFIX/lib/nim/bin/
-	cp dist/nimble/src/nimble $TERMUX_PREFIX/lib/nim/bin/
-	ln -sfr $TERMUX_PREFIX/lib/nim/bin/nim $TERMUX_PREFIX/bin/
-	ln -sfr $TERMUX_PREFIX/lib/nim/bin/koch $TERMUX_PREFIX/bin/
-	ln -sfr $TERMUX_PREFIX/lib/nim/bin/nimble $TERMUX_PREFIX/bin/
+	./install.sh "$TERMUX_PREFIX/lib"
+	ln -sfr "$TERMUX_PREFIX/lib/nim/bin/nim" "$TERMUX_PREFIX/bin/"
+	for cmd in "${_NIM_TOOLS[@]}"; do
+		cp "$cmd" "$TERMUX_PREFIX/lib/nim/bin/"
+		ln -sfr "$TERMUX_PREFIX/lib/nim/bin/$(basename "$cmd")" "$TERMUX_PREFIX/bin/"
+	done
+	mkdir -p "$TERMUX_PREFIX/lib/nim/tools"
+	cp -r tools/dochack "$TERMUX_PREFIX/lib/nim/tools/"
 }

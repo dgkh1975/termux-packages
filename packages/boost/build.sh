@@ -2,23 +2,21 @@ TERMUX_PKG_HOMEPAGE=https://boost.org
 TERMUX_PKG_DESCRIPTION="Free peer-reviewed portable C++ source libraries"
 TERMUX_PKG_LICENSE="BSL-1.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.74.0
-TERMUX_PKG_REVISION=2
-TERMUX_PKG_SRCURL=https://dl.bintray.com/boostorg/release/$TERMUX_PKG_VERSION/source/boost_${TERMUX_PKG_VERSION//./_}.tar.bz2
-TERMUX_PKG_SHA256=83bfc1507731a0906e387fc28b7ef5417d591429e51e788417fe9ff025e116b1
-TERMUX_PKG_DEPENDS="libc++, libbz2, libiconv, liblzma, zlib"
+# Never forget to always bump revision of reverse dependencies and rebuild them
+# when bumping version.
+TERMUX_PKG_VERSION="1:1.92.0"
+_VERSION="${TERMUX_PKG_VERSION:2}"
+TERMUX_PKG_SRCURL="https://archives.boost.io/release/${_VERSION}/source/boost_${_VERSION//./_}.tar.bz2"
+TERMUX_PKG_SHA256=5c1d40cb8e19adbf740a4ec2da35b3e58f3f5804b1dce44deb53df72193cbc6c
+TERMUX_PKG_AUTO_UPDATE=false
+TERMUX_PKG_DEPENDS="libc++, libbz2, libiconv, liblzma, zlib, libandroid-wordexp"
+# Although python is a build dependency, boost needs to be rebuilt when major
+# versions of python are updated to ensure that CMake's find_package detects
+# Boost.Python as python version is hardcoded into it
 TERMUX_PKG_BUILD_DEPENDS="python"
 TERMUX_PKG_BREAKS="libboost-python (<= 1.65.1-2), boost-dev"
 TERMUX_PKG_REPLACES="libboost-python (<= 1.65.1-2), boost-dev"
 TERMUX_PKG_BUILD_IN_SRC=true
-
-termux_step_pre_configure() {
-	# Certain packages are not safe to build on device because their
-	# build.sh script deletes specific files in $TERMUX_PREFIX.
-	if $TERMUX_ON_DEVICE_BUILD; then
-		termux_error_exit "Package '$TERMUX_PKG_NAME' is not safe for on-device builds."
-	fi
-}
 
 termux_step_make_install() {
 	CXXFLAGS+=" -std=c++14"
@@ -27,8 +25,8 @@ termux_step_make_install() {
 	rm $TERMUX_PREFIX/include/boost -rf
 
 	CC= CXX= LDFLAGS= CXXFLAGS= ./bootstrap.sh
-	echo "using clang : $TERMUX_ARCH : $CXX : <linkflags>-L$TERMUX_PREFIX/lib ; " >> project-config.jam
-	echo "using python : 3.9 : $TERMUX_PREFIX/bin/python3 : $TERMUX_PREFIX/include/python3.9 : $TERMUX_PREFIX/lib ;" >> project-config.jam
+	echo "using clang : $TERMUX_ARCH : $CXX : <linkflags>-L$TERMUX_PREFIX/lib ; " >>project-config.jam
+	echo "using python : ${TERMUX_PYTHON_VERSION} : $TERMUX_PREFIX/bin/python3 : $TERMUX_PREFIX/include/python${TERMUX_PYTHON_VERSION} : $TERMUX_PREFIX/lib ;" >>project-config.jam
 
 	if [ "$TERMUX_ARCH" = arm ] || [ "$TERMUX_ARCH" = aarch64 ]; then
 		BOOSTARCH=arm
@@ -44,10 +42,11 @@ termux_step_make_install() {
 		BOOSTAM=32
 	fi
 
-	./b2 target-os=android -j${TERMUX_MAKE_PROCESSES} \
+	./b2 target-os=android -j${TERMUX_PKG_MAKE_PROCESSES} \
+		define=BOOST_FILESYSTEM_DISABLE_STATX \
 		include=$TERMUX_PREFIX/include \
 		toolset=clang-$TERMUX_ARCH \
-		--prefix="$TERMUX_PREFIX"  \
+		--prefix="$TERMUX_PREFIX" \
 		-q \
 		--without-stacktrace \
 		--disable-icu \

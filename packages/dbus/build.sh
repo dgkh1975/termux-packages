@@ -1,29 +1,42 @@
 TERMUX_PKG_HOMEPAGE=https://dbus.freedesktop.org
 TERMUX_PKG_DESCRIPTION="Freedesktop.org message bus system"
 TERMUX_PKG_LICENSE="GPL-2.0"
-TERMUX_PKG_MAINTAINER="Leonid Pliushch <leonid.pliushch@gmail.com>"
-TERMUX_PKG_VERSION=1.12.20
-TERMUX_PKG_REVISION=2
-TERMUX_PKG_SRCURL="https://dbus.freedesktop.org/releases/dbus/dbus-$TERMUX_PKG_VERSION.tar.gz"
-TERMUX_PKG_SHA256=f77620140ecb4cdc67f37fb444f8a6bea70b5b6461f12f1cbe2cec60fa7de5fe
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION="1.16.2"
+TERMUX_PKG_REVISION=3
+TERMUX_PKG_SRCURL="https://dbus.freedesktop.org/releases/dbus/dbus-$TERMUX_PKG_VERSION.tar.xz"
+TERMUX_PKG_SHA256=0ba2a1a4b16afe7bceb2c07e9ce99a8c2c3508e5dec290dbb643384bd6beb7e2
 TERMUX_PKG_DEPENDS="libexpat, libx11"
 TERMUX_PKG_BREAKS="dbus-dev"
 TERMUX_PKG_REPLACES="dbus-dev"
-TERMUX_PKG_BUILD_IN_SRC=true
 
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
---disable-libaudit
---disable-systemd
---disable-tests
---enable-x11-autolaunch
---with-test-socket-dir=$TERMUX_PREFIX/tmp
---with-session-socket-dir=$TERMUX_PREFIX/tmp
---with-x
+-Dlibaudit=disabled
+-Dsystemd=disabled
+-Dmodular_tests=disabled
+-Dx11_autolaunch=enabled
+-Dtest_socket_dir=$TERMUX_PREFIX/tmp
+-Dsession_socket_dir=$TERMUX_PREFIX/tmp
 "
 
 termux_step_pre_configure() {
 	export LIBS="-llog"
-	autoreconf -fi
+	# Enforce meson building
+	rm CMakeLists.txt
+
+	if [[ "$TERMUX_DEBUG_BUILD" == "true" ]]; then
+		# How to get extra-verbose logging:
+		# 1. build with -Dverbose_mode=true
+		# 2. use export DBUS_VERBOSE=1
+		# 3. launch DBus with --nofork, for example:
+		#    DBUS_VERBOSE=1 dbus-daemon --system --nofork
+		TERMUX_PKG_EXTRA_CONFIGURE_ARGS+=" -Dverbose_mode=true"
+	fi
+}
+
+termux_step_post_make_install() {
+	mkdir -p $TERMUX_PREFIX/var/run/dbus
+	echo "dbus needs this folder to put pid and system_bus_socket" >> $TERMUX_PREFIX/var/run/dbus/README.dbus
 }
 
 termux_step_create_debscripts() {

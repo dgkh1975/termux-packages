@@ -1,0 +1,14 @@
+TERMUX_PKG_HOMEPAGE=https://quickjs-ng.github.io/quickjs/
+TERMUX_PKG_DESCRIPTION="Embeddable JavaScript engine in C (NG fork)"
+TERMUX_PKG_LICENSE="MIT"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION="0.18.0"
+TERMUX_PKG_SRCURL="https://github.com/quickjs-ng/quickjs/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz"
+TERMUX_PKG_SHA256=28bcd89aa3683fd2a946537e5ce3f11cc46b5cbf3383c7561aaef3df5ff9f1dd
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_CONFLICTS="quickjs"
+TERMUX_PKG_PROVIDES="quickjs"
+TERMUX_PKG_REPLACES="quickjs"
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+-DBUILD_SHARED_LIBS=ON
+"

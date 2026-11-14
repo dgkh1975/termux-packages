@@ -4,7 +4,7 @@
 #
 # .\scripts\run-docker.ps1 ./build-package.sh -a arm libandroid-support
 
-Set-Variable -Name IMAGE_NAME -Value "termux/package-builder"
+Set-Variable -Name IMAGE_NAME -Value "ghcr.io/termux/package-builder"
 Set-Variable -Name CONTAINER_NAME -Value "termux-package-builder"
 
 Write-Output "Running container ${CONTAINER_NAME} from image ${IMAGE_NAME}..."
@@ -17,6 +17,9 @@ if (-Not $?) {
         --detach `
         --name $CONTAINER_NAME `
         --volume "${PWD}:/home/builder/termux-packages" `
+        --security-opt seccomp="${PWD}/scripts/profile.json" `
+        --cap-add CAP_SYS_ADMIN `
+        --device /dev/fuse `
         --tty `
         "$IMAGE_NAME"
 }

@@ -1,0 +1,15 @@
+--- a/wscript
++++ b/wscript
+@@ -438,9 +438,9 @@ def set_compiler_flags (conf,opt):
+     debug_flags = []
+ 
+     u = PLATFORM.uname ()
+-    cpu = u[4]
+-    platform = u[0].lower()
+-    version = u[2]
++    cpu = 'generic'
++    platform = 'linux'
++    version = 'none'
+ 
+     # waf adds -O0 -g itself. thanks waf!
+     is_clang = conf.check_cxx(fragment = '''

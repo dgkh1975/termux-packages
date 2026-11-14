@@ -1,0 +1,11 @@
+--- a/test/parallel/test-child-process-spawnsync-shell.js
++++ b/test/parallel/test-child-process-spawnsync-shell.js
+@@ -88,7 +88,7 @@ assert.strictEqual(env.stdout.toString().trim(), 'buzz');
+   test('darwin', '/bin/csh', '/bin/csh');
+ 
+   // Test Android platforms.
+-  test('android', true, '/system/bin/sh');
++  test('android', true, '@TERMUX_PREFIX@/bin/sh');
+ 
+   // Test Windows platforms with a user specified shell.
+   test('win32', 'powershell.exe', 'powershell.exe');

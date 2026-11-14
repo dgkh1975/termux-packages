@@ -1,0 +1,24 @@
+--- a/src/backends/native/meta-backend-native.h
++++ b/src/backends/native/meta-backend-native.h
+@@ -29,7 +29,9 @@
+ #include "backends/native/meta-clutter-backend-native.h"
+ #include "backends/native/meta-kms-types.h"
+ #include "backends/native/meta-launcher.h"
++#ifdef HAVE_LIBGUDEV
+ #include "backends/native/meta-udev.h"
++#endif
+ 
+ #define META_TYPE_BACKEND_NATIVE (meta_backend_native_get_type ())
+ G_DECLARE_FINAL_TYPE (MetaBackendNative, meta_backend_native,
+--- a/src/backends/native/meta-launcher.c
++++ b/src/backends/native/meta-launcher.c
+@@ -32,7 +32,9 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#ifdef HAVE_LOGIND
+ #include <systemd/sd-login.h>
++#endif
+ #include <gudev/gudev.h>
+ 
+ #include "backends/meta-backend-private.h"

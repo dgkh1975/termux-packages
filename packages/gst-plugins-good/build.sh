@@ -1,14 +1,14 @@
 TERMUX_PKG_HOMEPAGE=https://gstreamer.freedesktop.org/
 TERMUX_PKG_DESCRIPTION="GStreamer Good Plug-ins"
-TERMUX_PKG_LICENSE="LGPL-2.0"
+TERMUX_PKG_LICENSE="LGPL-2.1"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.18.2
-TERMUX_PKG_REVISION=1
+TERMUX_PKG_VERSION="1.28.9"
 TERMUX_PKG_SRCURL=https://gstreamer.freedesktop.org/src/gst-plugins-good/gst-plugins-good-${TERMUX_PKG_VERSION}.tar.xz
-TERMUX_PKG_SHA256=f71752dde434d9ec55fa5e8d2e2a3be3fc6eb5b34f397b065f84aead25b449a4
-TERMUX_PKG_DEPENDS="gst-plugins-base, libandroid-shmem, libcaca, libsoup, libjpeg-turbo, libpng, libflac, libbz2, libvpx, pulseaudio, libmp3lame, gstreamer, libogg, zlib"
-# pcre needed by glib. libxml2 needed by libsoup
-TERMUX_PKG_BUILD_DEPENDS="glib, pcre, libxml2"
+TERMUX_PKG_SHA256=e518cd97483706a252e95e60312a22d23dec6f5e7673af6f5bde719c3a9ca7f4
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="glib, gst-plugins-base, gstreamer, libandroid-shmem, libbz2, libcaca, libflac, libjpeg-turbo, libmp3lame, libnettle, libpng, libvpx, libx11, libxext, libxfixes, libxml2, libmpg123, pulseaudio, zlib"
+# -Dqt5=disabled and -Dqt6=disabled avoid
+# /bin/bash: line 1: /data/data/com.termux/files/usr/lib/qt6/moc: cannot execute binary file: Exec format error
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -Dcairo=disabled
 -Dexamples=disabled
@@ -18,8 +18,11 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 -Dtests=disabled
 -Dv4l2=disabled
 -Daalib=disabled
+-Dqt5=disabled
+-Dqt6=disabled
 "
 
 termux_step_pre_configure() {
+	termux_setup_glib_cross_pkg_config_wrapper
 	LDFLAGS+=" -landroid-shmem"
 }

@@ -1,0 +1,22 @@
+--- a/sway/ipc-server.c
++++ b/sway/ipc-server.c
+@@ -135,7 +135,7 @@ struct sockaddr_un *ipc_user_sockaddr(void) {
+ 	// Env var typically set by logind, e.g. "/run/user/<user-id>"
+ 	const char *dir = getenv("XDG_RUNTIME_DIR");
+ 	if (!dir) {
+-		dir = "/tmp";
++		dir = "@TERMUX_PREFIX@/tmp";
+ 	}
+ 	if (path_size <= snprintf(ipc_sockaddr->sun_path, path_size,
+ 			"%s/sway-ipc.%u.%i.sock", dir, getuid(), getpid())) {
+--- a/swaynag/swaynag.c
++++ b/swaynag/swaynag.c
+@@ -17,7 +17,7 @@ static void nop() {
+ }
+ 
+ static bool terminal_execute(char *terminal, char *command) {
+-	char fname[] = "/tmp/swaynagXXXXXX";
++	char fname[] = "@TERMUX_PREFIX@/tmp/swaynagXXXXXX";
+ 	FILE *tmp= fdopen(mkstemp(fname), "w");
+ 	if (!tmp) {
+ 		sway_log(SWAY_ERROR, "Failed to create temp script");

@@ -1,25 +1,36 @@
 TERMUX_PKG_HOMEPAGE=https://www.gnu.org/software/screen/
 TERMUX_PKG_DESCRIPTION="Terminal multiplexer with VT100/ANSI terminal emulation"
-TERMUX_PKG_LICENSE="GPL-2.0"
+TERMUX_PKG_LICENSE="GPL-3.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=4.8.0
+TERMUX_PKG_VERSION="5.0.2"
 TERMUX_PKG_SRCURL=https://mirrors.kernel.org/gnu/screen/screen-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=6e11b13d8489925fde25dfb0935bf6ed71f9eb47eff233a181e078fde5655aa1
-TERMUX_PKG_DEPENDS="ncurses, libcrypt"
+TERMUX_PKG_SHA256=ca9a2c7e240919bc7ac12124593ae4529bb4eb5f7349d8857829b7e3f0b3b332
+# libandroid-support is necessary as screen uses `wcwidth`, see #22688
+TERMUX_PKG_DEPENDS="libandroid-support, ncurses, termux-auth"
+TERMUX_PKG_BUILD_DEPENDS="libcrypt"
+TERMUX_PKG_BUILD_IN_SRC=true
+TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+--with-system_screenrc=$TERMUX_PREFIX/etc/screenrc
 --disable-socket-dir
+--disable-pam
 --enable-colors256
---with-ssl=openssl
 "
+
+termux_pkg_auto_update() {
+	read -r latest < <(curl -fsSL "https://mirrors.kernel.org/gnu/screen" | sed -rn 's/.*screen-([0-9]+(\.[0-9]+)*).*/\1/p' | sort -Vr);
+	termux_pkg_upgrade_version "${latest}"
+}
 
 termux_step_pre_configure() {
 	# Run autoreconf since we have patched configure.ac
-	autoconf
-	CFLAGS+=" -DGETUTENT"
-	export LIBS="-lcrypt"
+	autoreconf -fi
+	CFLAGS+=" -DGETUTENT -Dindex=strchr -Drindex=strrchr"
+	export LIBS="-ltermux-auth"
 }
 
 termux_step_post_configure() {
-	echo '#define HAVE_SVR4_PTYS 1' >> $TERMUX_PKG_BUILDDIR/config.h
+	echo '#define HAVE_SVR4_PTYS 1' >> "$TERMUX_PKG_BUILDDIR/config.h"
 	echo 'mousetrack on' > "$TERMUX_PREFIX/etc/screenrc"
+	echo 'truecolor on' >> "$TERMUX_PREFIX/etc/screenrc"
 }

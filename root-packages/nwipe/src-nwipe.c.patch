@@ -1,0 +1,11 @@
+--- a/src/nwipe.c
++++ b/src/nwipe.c
+@@ -54,7 +54,7 @@
+ #include "miscellaneous.h"
+ 
+ #include <sys/ioctl.h> /* FIXME: Twice Included */
+-#include <sys/shm.h>
++#include <linux/shm.h>
+ #include <wait.h>
+ 
+ #include <parted/parted.h>

@@ -32,11 +32,13 @@ termux_step_configure_autotools() {
 		QUIET_BUILD="--enable-silent-rules --silent --quiet"
 	fi
 
-	if [ "$TERMUX_ON_DEVICE_BUILD" = "false" ]; then
+	if [ "$TERMUX_ON_DEVICE_BUILD" = "false" ] && [ ! -d "$TERMUX_PKG_TMPDIR/config-scripts" ]; then
 		# Some packages provides a $PKG-config script which some configure scripts pickup instead of pkg-config:
 		mkdir "$TERMUX_PKG_TMPDIR/config-scripts"
 		for f in $TERMUX_PREFIX/bin/*config; do
-			test -f "$f" && cp "$f" "$TERMUX_PKG_TMPDIR/config-scripts"
+			if [[ -f "$f" && "$(head -c 4 "$f")" != "$(echo -ne '\0177ELF')" ]]; then
+				cp "$f" "$TERMUX_PKG_TMPDIR/config-scripts"
+			fi
 		done
 		export PATH=$TERMUX_PKG_TMPDIR/config-scripts:$PATH
 	fi
@@ -88,6 +90,7 @@ termux_step_configure_autotools() {
 	AVOID_GNULIB+=" gl_cv_func_unlink_honors_slashes=yes"
 	AVOID_GNULIB+=" gl_cv_func_vsnprintf_posix=yes"
 	AVOID_GNULIB+=" gl_cv_func_vsnprintf_zerosize_c99=yes"
+	AVOID_GNULIB+=" gl_cv_func_wcrtomb_works=yes"
 	AVOID_GNULIB+=" gl_cv_func_wcwidth_works=yes"
 	AVOID_GNULIB+=" gl_cv_func_working_getdelim=yes"
 	AVOID_GNULIB+=" gl_cv_func_working_mkstemp=yes"
@@ -100,9 +103,10 @@ termux_step_configure_autotools() {
 	# shellcheck disable=SC2086
 	env $AVOID_GNULIB "$TERMUX_PKG_SRCDIR/configure" \
 		--disable-dependency-tracking \
-		--prefix=$TERMUX_PREFIX \
-		--libdir=$TERMUX_PREFIX/lib \
-		--sbindir=$TERMUX_PREFIX/bin \
+		--prefix="$TERMUX_PREFIX" \
+		--libdir="$TERMUX__PREFIX__LIB_DIR" \
+		--includedir="$TERMUX__PREFIX__INCLUDE_DIR" \
+		--sbindir="$TERMUX_PREFIX/bin" \
 		--disable-rpath --disable-rpath-hack \
 		$HOST_FLAG \
 		$TERMUX_PKG_EXTRA_CONFIGURE_ARGS \
@@ -110,5 +114,10 @@ termux_step_configure_autotools() {
 		$ENABLE_SHARED \
 		$ENABLE_STATIC \
 		$LIBEXEC_FLAG \
-		$QUIET_BUILD
+		$QUIET_BUILD \
+		|| (termux_step_configure_autotools_failure_hook && false)
+}
+
+termux_step_configure_autotools_failure_hook() {
+	false
 }

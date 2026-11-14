@@ -1,0 +1,30 @@
+--- a/libs/ardouralsautil/wscript
++++ b/libs/ardouralsautil/wscript
+@@ -10,7 +10,6 @@ def options(opt):
+ 
+ def configure(conf):
+     if re.search ("linux", sys.platform) != None and Options.options.dist_target != 'mingw':
+-        autowaf.check_pkg(conf, 'alsa', uselib_store='ALSA')
+         autowaf.check_pkg(conf, 'dbus-1', uselib_store='DBUS', mandatory = False)
+ 
+ def build(bld):
+--- a/wscript
++++ b/wscript
+@@ -1169,8 +1169,6 @@ def configure(conf):
+               mandatory = True,
+               msg = 'Checking for boost library >= 1.68')
+ 
+-    if re.search ("linux", sys.platform) is not None and Options.options.dist_target != 'mingw':
+-        autowaf.check_pkg(conf, 'alsa', uselib_store='ALSA')
+ 
+     if re.search ("linux", sys.platform) is not None and Options.options.dist_target != 'mingw':
+         autowaf.check_pkg(conf, 'libpulse', uselib_store='PULSEAUDIO', mandatory=False)
+@@ -1424,8 +1422,6 @@ int main () { __int128 x = 0; return 0; }
+         if conf.is_defined('HAVE_PULSEAUDIO'):
+             backends += ['pulseaudio']
+ 
+-        if re.search ("linux", sys.platform) is not None and Options.options.dist_target != 'mingw':
+-            backends += ['alsa']
+         if sys.platform == 'darwin':
+             backends += ['coreaudio']
+         if Options.options.dist_target == 'mingw' or Options.options.dist_target == 'msvc':

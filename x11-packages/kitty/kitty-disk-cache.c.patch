@@ -1,0 +1,13 @@
+# error: call to undeclared function 'explicit_bzero'
+
+--- a/kitty/disk-cache.c
++++ b/kitty/disk-cache.c
+@@ -59,7 +59,7 @@
+ #elif defined(__NetBSD__)
+     explicit_memset(p, 0, sz);
+ #else
+-    explicit_bzero(p, sz);
++    memset(p, 0, sz);
+ #endif
+ }
+ static void

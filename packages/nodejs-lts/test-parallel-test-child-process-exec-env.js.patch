@@ -1,0 +1,11 @@
+--- a/test/parallel/test-child-process-exec-env.js
++++ b/test/parallel/test-child-process-exec-env.js
+@@ -44,7 +44,7 @@ function after(err, stdout, stderr) {
+ }
+ 
+ if (!isWindows) {
+-  child = exec('/usr/bin/env', { env: { 'HELLO': 'WORLD' } }, after);
++  child = exec('@TERMUX_PREFIX@/bin/env', { env: { 'HELLO': 'WORLD' } }, after);
+ } else {
+   child = exec('set',
+                { env: { ...process.env, 'HELLO': 'WORLD' } },

@@ -1,17 +1,15 @@
-TERMUX_PKG_HOMEPAGE=http://e2fsprogs.sourceforge.net
+TERMUX_PKG_HOMEPAGE=https://e2fsprogs.sourceforge.net
 TERMUX_PKG_DESCRIPTION="EXT 2/3/4 filesystem utilities"
-TERMUX_PKG_LICENSE="GPL-2.0, LGPL-2.0, MIT"
+TERMUX_PKG_LICENSE="GPL-2.0, LGPL-2.0"
 TERMUX_PKG_LICENSE_FILE="NOTICE"
-TERMUX_PKG_MAINTAINER="Leonid Pliushch <leonid.pliushch@gmail.com>"
-TERMUX_PKG_VERSION=1.45.6
-TERMUX_PKG_REVISION=2
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION="1.47.4"
 TERMUX_PKG_SRCURL=https://www.kernel.org/pub/linux/kernel/people/tytso/e2fsprogs/v$TERMUX_PKG_VERSION/e2fsprogs-$TERMUX_PKG_VERSION.tar.xz
-TERMUX_PKG_SHA256=ffa7ae6954395abdc50d0f8605d8be84736465afc53b8938ef473fcf7ff44256
+TERMUX_PKG_SHA256=fd5bf388cbdbe006a3d3b318d983b2948382440acc85a87f1e7d108653e8db0b
+TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_CONFFILES="etc/mke2fs.conf"
 TERMUX_PKG_NO_STATICSPLIT=true
-
-## util-linux provides libblkid
-TERMUX_PKG_DEPENDS="libuuid, util-linux"
+TERMUX_PKG_DEPENDS="libarchive, libblkid, libuuid"
 TERMUX_PKG_BREAKS="e2fsprogs-dev"
 TERMUX_PKG_REPLACES="e2fsprogs-dev"
 
@@ -21,10 +19,13 @@ TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
 --enable-relative-symlinks
 --disable-defrag
 --disable-e2initrd-helper
+--disable-fsck
 --disable-libuuid
 --disable-libblkid
 --disable-uuidd
---with-crond_dir=${TERMUX_PREFIX}/etc/cron.d"
+--with-crond_dir=${TERMUX_PREFIX}/etc/cron.d
+--with-libarchive
+"
 
 # Remove com_err.h to avoid conflicting with krb5-dev:
 TERMUX_PKG_RM_AFTER_INSTALL="

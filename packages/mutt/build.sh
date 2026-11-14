@@ -1,12 +1,12 @@
 TERMUX_PKG_HOMEPAGE=http://www.mutt.org/
 TERMUX_PKG_DESCRIPTION="Mail client with patches from neomutt"
-TERMUX_PKG_LICENSE="GPL-2.0"
+TERMUX_PKG_LICENSE="GPL-2.0-or-later"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=2.0.4
-TERMUX_PKG_REVISION=1
+TERMUX_PKG_VERSION="2.4.3"
 TERMUX_PKG_SRCURL=ftp://ftp.mutt.org/pub/mutt/mutt-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=45087e78105e9abc7cc37827865d319081587cb53a94412aa4e3118e937991d4
-TERMUX_PKG_DEPENDS="libandroid-support, ncurses, gdbm, openssl, libsasl, mime-support, zlib, libiconv"
+TERMUX_PKG_SHA256=ce9154e3afede622d98b90a22c87d06f32051c930a9afb2b7ef41656c4dbc948
+TERMUX_PKG_AUTO_UPDATE=true
+TERMUX_PKG_DEPENDS="libandroid-support, ncurses, gdbm, openssl, libsasl, media-types, zlib, libiconv"
 TERMUX_PKG_BUILD_IN_SRC=true
 
 TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
@@ -14,6 +14,7 @@ mutt_cv_c99_snprintf=yes
 mutt_cv_c99_vsnprintf=yes
 --disable-gpgme
 --enable-compressed
+--enable-debug
 --enable-hcache
 --enable-imap
 --enable-pop
@@ -26,7 +27,16 @@ mutt_cv_c99_vsnprintf=yes
 --with-ssl
 "
 
-if $TERMUX_DEBUG; then
+# fget{c,s}_unlocked were added in API level 28.
+# AC_CHECK_FUNCS(fget{c,s}_unlocked) finds them in libc, even though
+# it is not defined in stdio.h, so we need to override the check or
+# else compilation on device fails
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS+="
+ac_cv_func_fgetc_unlocked=no
+ac_cv_func_fgets_unlocked=no
+"
+
+if $TERMUX_DEBUG_BUILD; then
 	export TERMUX_PKG_EXTRA_CONFIGURE_ARGS+="--enable-debug"
 fi
 
@@ -40,6 +50,11 @@ etc/mime.types.dist
 
 TERMUX_PKG_CONFFILES="etc/Muttrc"
 
+termux_step_pre_configure() {
+	# Workaround -std=gnu23 in bundled configure script
+	autoreconf -fiv
+}
+
 termux_step_post_configure() {
 	# Build wants to run mutt_md5:
 	gcc -DHAVE_STDINT_H -DMD5UTIL $TERMUX_PKG_SRCDIR/md5.c -o $TERMUX_PKG_BUILDDIR/mutt_md5
@@ -47,7 +62,7 @@ termux_step_post_configure() {
 }
 
 termux_step_post_make_install() {
-	cp $TERMUX_PKG_SRCDIR/doc/mutt.man $TERMUX_PREFIX/share/man/man1/mutt.1.man
+	cp doc/mutt.man $TERMUX_PREFIX/share/man/man1/mutt.1.man
 	mkdir -p $TERMUX_PREFIX/share/examples/mutt/
-	cp $TERMUX_PKG_SRCDIR/contrib/gpg.rc $TERMUX_PREFIX/share/examples/mutt/gpg.rc
+	cp contrib/gpg.rc $TERMUX_PREFIX/share/examples/mutt/
 }

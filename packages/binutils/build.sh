@@ -1,29 +1,62 @@
 TERMUX_PKG_HOMEPAGE=https://www.gnu.org/software/binutils/
-TERMUX_PKG_DESCRIPTION="Collection of binary tools, the main ones being ld, the GNU linker, and as, the GNU assembler"
-TERMUX_PKG_LICENSE="GPL-2.0"
+TERMUX_PKG_DESCRIPTION="A GNU collection of binary utilities"
+TERMUX_PKG_LICENSE="GPL-3.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=2.35.1
-TERMUX_PKG_REVISION=1
-TERMUX_PKG_SRCURL=https://mirrors.kernel.org/gnu/binutils/binutils-${TERMUX_PKG_VERSION}.tar.xz
-TERMUX_PKG_SHA256=3ced91db9bf01182b7e420eab68039f2083aed0a214c0424e257eae3ddee8607
-TERMUX_PKG_DEPENDS="libc++, zlib"
-TERMUX_PKG_BREAKS="binutils-dev"
-TERMUX_PKG_REPLACES="binutils-dev"
-TERMUX_PKG_EXTRA_CONFIGURE_ARGS="--enable-gold --enable-plugins --disable-werror --with-system-zlib --enable-new-dtags"
+# `lua-language-server` links against libbfd,
+# remember to rebuild it when updating `binutils`.
+TERMUX_PKG_VERSION="2.47"
+TERMUX_PKG_SRCURL="https://mirrors.kernel.org/gnu/binutils/binutils-${TERMUX_PKG_VERSION}.tar.xz"
+TERMUX_PKG_SHA256=154ab23b60070e8f27013c22977f1129425d67d1e8acd6e13010e617811e4cff
+TERMUX_PKG_DEPENDS="libc++, zlib, zstd"
+TERMUX_PKG_BREAKS="binutils (<< 2.46), binutils-bin, binutils-libs, binutils-dev"
+TERMUX_PKG_REPLACES="binutils (<< 2.46), binutils-bin, binutils-libs, binutils-dev"
+TERMUX_PKG_EXTRA_CONFIGURE_ARGS="
+--disable-gprofng
+--enable-plugins
+--disable-werror
+--with-system-zlib
+--enable-new-dtags
+"
 TERMUX_PKG_EXTRA_MAKE_ARGS="tooldir=$TERMUX_PREFIX"
-TERMUX_PKG_RM_AFTER_INSTALL="share/man/man1/windmc.1 share/man/man1/windres.1 bin/ld.bfd"
+TERMUX_PKG_RM_AFTER_INSTALL="share/man/man1/windmc.1 share/man/man1/windres.1"
 TERMUX_PKG_NO_STATICSPLIT=true
-TERMUX_PKG_HAS_DEBUG=false
-# Debug build fails with
-# ~/termux-build/binutils/src/binutils/readelf.c:19060:81: error: in call to 'fread', size * count is too large for the given buffer
-#     if (fread (ehdr32.e_type, sizeof (ehdr32) - EI_NIDENT, 1, filedata->handle) != 1)
-#                                                                               ^
-# ~/termux-build/_cache/19b-aarch64-24-v5/bin/../sysroot/usr/include/bits/fortify/stdio.h:107:9: note: from 'diagnose_if' attribute on 'fread':
-#        __clang_error_if(__bos(buf) != __BIONIC_FORTIFY_UNKNOWN_SIZE && size * count > __bos(buf),
-#        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# ~/termux-build/_cache/19b-aarch64-24-v5/bin/../sysroot/usr/include/sys/cdefs.h:163:52: note: expanded from macro '__clang_error_if'
-# #define __clang_error_if(cond, msg) __attribute__((diagnose_if(cond, msg, "error")))
-#                                                    ^           ~~~~
+# will overwrite llvm binutils and llvm ld
+TERMUX_PKG_ON_DEVICE_BUILD_NOT_SUPPORTED=true
+TERMUX_PKG_GROUPS="base-devel"
+
+# For binutils-cross:
+# Since NDK r27, debug sections of libraries from the bundled sysroot are
+# compressed with zstd. It is necessary to enable the zstd support for ld.bfd.
+TERMUX_PKG_HOSTBUILD=true
+TERMUX_PKG_EXTRA_HOSTBUILD_CONFIGURE_ARGS="
+--prefix=$TERMUX_PREFIX/opt/binutils/cross
+--target=$TERMUX_HOST_PLATFORM
+--enable-shared
+--disable-static
+--disable-nls
+--with-system-zlib
+--with-zstd
+--disable-gprofng
+ZSTD_LIBS=-l:libzstd.a
+"
+
+termux_step_post_get_source() {
+	# Remove the marker every time, as binutils is architecture-specific.
+	rm -rf "$TERMUX_HOSTBUILD_MARKER"
+
+	# https://gitlab.archlinux.org/archlinux/packaging/packages/binutils/-/blob/2.46-1/PKGBUILD#L76-77
+	# Turn off development mode (-Werror, gas run-time checks, date in sonames)
+	sed -i '/^development=/s/true/false/' "$TERMUX_PKG_SRCDIR/bfd/development.sh"
+
+}
+
+termux_step_host_build() {
+	# shellcheck disable=SC2086
+	"$TERMUX_PKG_SRCDIR/configure" $TERMUX_PKG_EXTRA_HOSTBUILD_CONFIGURE_ARGS
+	make -j "$TERMUX_PKG_MAKE_PROCESSES"
+	make install
+	make install-strip
+}
 
 # Avoid linking against libfl.so from flex if available:
 export LEXLIB=
@@ -31,20 +64,36 @@ export LEXLIB=
 termux_step_pre_configure() {
 	export CPPFLAGS="$CPPFLAGS -Wno-c++11-narrowing"
 
-	if [ $TERMUX_ARCH_BITS = 32 ]; then
-		export LIB_PATH="${TERMUX_PREFIX}/lib:/system/lib"
-	else
-		export LIB_PATH="${TERMUX_PREFIX}/lib:/system/lib64"
+	LIB_PATH="${TERMUX_PREFIX}/lib:/system/lib"
+	if (( TERMUX_ARCH_BITS == 64 )); then
+		LIB_PATH+="64"
 	fi
+
+	export LIB_PATH
 }
 
 termux_step_post_make_install() {
-	cp $TERMUX_PKG_BUILDER_DIR/ldd $TERMUX_PREFIX/bin/ldd
-	cd $TERMUX_PREFIX/bin
-	# Setup symlinks as these are used when building, so used by
-	# system setup in e.g. python, perl and libtool:
-	for b in ar ld nm objdump ranlib readelf strip; do
-		ln -s -f $b $TERMUX_HOST_PLATFORM-$b
+	rm "${TERMUX_PREFIX}/bin/ld"
+	mv "${TERMUX_PREFIX}/share/man/man1/ld.1" \
+		"${TERMUX_PREFIX}/share/man/man1/ld.bfd.1"
+	local -a _BINUTILS_CONFLICTING_WITH_LLVM=(
+		"ar"
+		"addr2line"
+		"c++filt"
+		"nm"
+		"objcopy"
+		"objdump"
+		"ranlib"
+		"readelf"
+		"size"
+		"strings"
+		"strip"
+	)
+	local binutil
+	for binutil in "${_BINUTILS_CONFLICTING_WITH_LLVM[@]}"; do
+		mv "${TERMUX_PREFIX}/bin/${binutil}" \
+			"${TERMUX_PREFIX}/bin/g${binutil}"
+		mv "${TERMUX_PREFIX}/share/man/man1/${binutil}.1" \
+			"${TERMUX_PREFIX}/share/man/man1/g${binutil}.1"
 	done
-	ln -sf ld.gold gold
 }

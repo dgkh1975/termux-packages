@@ -1,0 +1,10 @@
+TERMUX_PKG_HOMEPAGE="https://github.com/lxqt/qtxdg-tools"
+TERMUX_PKG_DESCRIPTION="CLI tools for libqtxdg."
+TERMUX_PKG_LICENSE="LGPL-2.1"
+TERMUX_PKG_MAINTAINER="@termux"
+TERMUX_PKG_VERSION="4.5.0"
+TERMUX_PKG_SRCURL="https://github.com/lxqt/qtxdg-tools/releases/download/${TERMUX_PKG_VERSION}/qtxdg-tools-${TERMUX_PKG_VERSION}.tar.xz"
+TERMUX_PKG_SHA256=4532035802a8b08d5475ed8b054e417366327e85f43dd3c1bf1ab1864e422701
+TERMUX_PKG_DEPENDS="libc++, libqtxdg, qt6-qtbase"
+TERMUX_PKG_BUILD_DEPENDS="lxqt-build-tools, qt6-qttools"
+TERMUX_PKG_AUTO_UPDATE=true

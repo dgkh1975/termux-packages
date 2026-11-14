@@ -1,20 +1,33 @@
 TERMUX_PKG_HOMEPAGE=https://packages.debian.org/sid/netcat-openbsd
 TERMUX_PKG_DESCRIPTION="TCP/IP swiss army knife. OpenBSD variant."
-TERMUX_PKG_LICENSE="BSD"
+TERMUX_PKG_LICENSE="BSD 3-Clause"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=1.217-2
-TERMUX_PKG_REVISION=1
-TERMUX_PKG_SRCURL=https://salsa.debian.org/debian/netcat-openbsd/-/archive/debian/${TERMUX_PKG_VERSION}/netcat-openbsd-debian-${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=bb6427c49015c8d485c013898b08808192bf5719c40a79676162e5c2d971a34e
+TERMUX_PKG_VERSION="1.239-1"
+TERMUX_PKG_SRCURL="https://salsa.debian.org/debian/netcat-openbsd/-/archive/debian/${TERMUX_PKG_VERSION}/netcat-openbsd-debian-${TERMUX_PKG_VERSION}.tar.gz"
+TERMUX_PKG_SHA256=2a5c1304047a69a680a45834756136bde6fb1f73f9e8610b18e9c1dbff09259f
+TERMUX_PKG_PROVIDES="nc, ncat, netcat"
 TERMUX_PKG_DEPENDS="libbsd"
-TERMUX_PKG_CONFLICTS="netcat"
 TERMUX_PKG_BUILD_IN_SRC=true
+TERMUX_PKG_AUTO_UPDATE=true
+
+termux_pkg_auto_update() {
+	local latest_version
+	latest_version="$(
+		curl -fsSL --retry 5 "https://sources.debian.org/api/src/netcat-openbsd/" |
+			jq -r '.versions[] | select(.suites | index("sid")) | .version'
+	)"
+	if [[ -z "$latest_version" ]]; then
+		echo "WARN: Unable to get the latest version." >&2
+		return
+	fi
+	termux_pkg_upgrade_version "$latest_version"
+}
 
 termux_step_pre_configure() {
 	local p
-	for p in $(cat debian/patches/series); do
+	for p in $(< debian/patches/series); do
 		echo "Applying debian/patches/$p"
-		patch -p1 -i debian/patches/$p
+		patch -p1 -i "debian/patches/$p"
 	done
 
 	sed -i -e 's@-lresolv@@g' \
@@ -25,17 +38,11 @@ termux_step_pre_configure() {
 }
 
 termux_step_make_install() {
-	install -Dm700 nc $TERMUX_PREFIX/bin/netcat-openbsd
-	ln -sfr $TERMUX_PREFIX/bin/netcat-openbsd $TERMUX_PREFIX/bin/netcat
-	ln -sfr $TERMUX_PREFIX/bin/netcat-openbsd $TERMUX_PREFIX/bin/nc
-	install -Dm600 nc.1 $TERMUX_PREFIX/share/man/man1/netcat-openbsd.1
-	ln -sfr $TERMUX_PREFIX/share/man/man1/netcat-openbsd.1 \
-		$TERMUX_PREFIX/share/man/man1/netcat.1
-	ln -sfr $TERMUX_PREFIX/share/man/man1/netcat-openbsd.1 \
-		$TERMUX_PREFIX/share/man/man1/nc.1
+	install -Dm700 nc "$TERMUX_PREFIX/bin/netcat-openbsd"
+	install -Dm700 nc.1 "$TERMUX_PREFIX/share/man/man1/netcat-openbsd.1"
 }
 
 termux_step_install_license() {
-	mkdir -p $TERMUX_PREFIX/share/doc/netcat-openbsd
-	head -n28 netcat.c | tail -n+2 > $TERMUX_PREFIX/share/doc/netcat-openbsd/LICENSE
+	mkdir -p "$TERMUX_PREFIX/share/doc/$TERMUX_PKG_NAME"
+	head -n28 netcat.c | tail -n+2 > "$TERMUX_PREFIX/share/doc/$TERMUX_PKG_NAME/LICENSE"
 }

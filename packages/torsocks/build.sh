@@ -1,13 +1,14 @@
-TERMUX_PKG_HOMEPAGE=https://github.com/dgoulet/torsocks
+TERMUX_PKG_HOMEPAGE=https://gitlab.torproject.org/tpo/core/torsocks
 TERMUX_PKG_DESCRIPTION="Wrapper to safely torify applications"
 TERMUX_PKG_LICENSE="GPL-2.0"
 TERMUX_PKG_MAINTAINER="@termux"
-TERMUX_PKG_VERSION=2.3.0
-TERMUX_PKG_SRCURL=https://github.com/dgoulet/torsocks/archive/v$TERMUX_PKG_VERSION.tar.gz
-TERMUX_PKG_SHA256=817c143e8a9d217f41a223a85139c6ca28e1b99556c547fcdb4c72dbc170b6c9
+TERMUX_PKG_VERSION="2.5.0"
+TERMUX_PKG_REVISION=1
+TERMUX_PKG_SRCURL=https://gitlab.torproject.org/tpo/core/torsocks/-/archive/v${TERMUX_PKG_VERSION}/torsocks-v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=0fc8e18f2dc2e12f1129054f6d5acc7ecc3f0345bb57ed653fc8c6674e6ecc7e
+TERMUX_PKG_AUTO_UPDATE=true
 TERMUX_PKG_DEPENDS="tor"
 
 termux_step_pre_configure() {
 	./autogen.sh
 }
-

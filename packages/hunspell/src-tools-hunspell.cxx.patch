@@ -1,18 +1,17 @@
-diff -u -r ../hunspell-1.4.1/src/tools/hunspell.cxx ./src/tools/hunspell.cxx
---- ../hunspell-1.4.1/src/tools/hunspell.cxx	2016-05-03 03:55:52.000000000 -0400
-+++ ./src/tools/hunspell.cxx	2016-05-03 06:49:59.025455094 -0400
-@@ -113,7 +113,7 @@
- #include "odfparser.hxx"
- 
- #define LIBDIR                \
+--- a/src/tools/hunspell.cxx
++++ b/src/tools/hunspell.cxx
+@@ -115,7 +115,7 @@
+   HUNSPELL_DATADIR "/hunspell:"        \
+   HUNSPELL_DATADIR "/myspell:"         \
+   HUNSPELL_DATADIR "/myspell/dicts:"   \
 -  "/usr/share/hunspell:"      \
 +  "@TERMUX_PREFIX@/share/hunspell:"      \
    "/usr/share/myspell:"       \
-   "/usr/share/myspell/dicts:" \
-   "/Library/Spelling"
-@@ -137,7 +137,7 @@
-   "/usr/lib/openoffice.org2.0/share/dict/ooo"
+   "/usr/share/myspell/dicts"
  #define HOME getenv("HOME")
+@@ -124,7 +124,7 @@
+   "/usr/lib/libreoffice/share/extensions:"          \
+   "/usr/lib64/libreoffice/share/extensions"
  #define DICBASENAME ".hunspell_"
 -#define LOGFILE "/tmp/hunspell.log"
 +#define LOGFILE "@TERMUX_PREFIX@/tmp/hunspell.log"

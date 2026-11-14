@@ -1,0 +1,225 @@
+--- a/fluid/ExternalCodeEditor_UNIX.cxx
++++ b/fluid/ExternalCodeEditor_UNIX.cxx
+@@ -255,8 +255,8 @@ int ExternalCodeEditor::remove_tmpfile() {
+  \return pointer to static memory.
+  */
+ const char* ExternalCodeEditor::tmpdir_name() {
+-  static char dirname[100];
+-  snprintf(dirname, sizeof(dirname), "/tmp/.fluid-%ld", (long)getpid());
++  static char dirname[100] = {0};
++  snprintf(dirname, sizeof(dirname), "@TERMUX_PREFIX@/tmp/.fluid-%ld", (long)getpid());
+   return dirname;
+ }
+ 
+--- a/src/Fl_File_Icon2.cxx
++++ b/src/Fl_File_Icon2.cxx
+@@ -653,9 +653,9 @@ Fl_File_Icon::load_system_icons(void) {
+     if (!kdedir) {
+       // Figure out where KDE is installed...
+       if ((kdedir = fl_getenv("KDEDIR")) == NULL) {
+-        if (!fl_access("/opt/kde", F_OK)) kdedir = "/opt/kde";
+-        else if (!fl_access("/usr/local/share/mimelnk", F_OK)) kdedir = "/usr/local";
+-        else kdedir = "/usr";
++        if (!fl_access("@TERMUX_PREFIX@/opt/kde", F_OK)) kdedir = "@TERMUX_PREFIX@/opt/kde";
++        else if (!fl_access("@TERMUX_PREFIX@/share/mimelnk", F_OK)) kdedir = "@TERMUX_PREFIX@";
++        else kdedir = "@TERMUX_PREFIX@";
+       }
+     }
+ 
+@@ -691,66 +691,66 @@ Fl_File_Icon::load_system_icons(void) {
+ 
+       snprintf(filename, sizeof(filename), "%s/share/mimelnk", kdedir);
+       load_kde_icons(filename, icondir);
+-    } else if (!fl_access("/usr/share/icons/folder.xpm", F_OK)) {
++    } else if (!fl_access("@TERMUX_PREFIX@/share/icons/folder.xpm", F_OK)) {
+       // Load GNOME icons...
+       icon = new Fl_File_Icon("*", Fl_File_Icon::PLAIN);
+-      icon->load_image("/usr/share/icons/page.xpm");
++      icon->load_image("@TERMUX_PREFIX@/share/icons/page.xpm");
+ 
+       icon = new Fl_File_Icon("*", Fl_File_Icon::DIRECTORY);
+-      icon->load_image("/usr/share/icons/folder.xpm");
+-    } else if (!fl_access("/usr/dt/appconfig/icons", F_OK)) {
++      icon->load_image("@TERMUX_PREFIX@/share/icons/folder.xpm");
++    } else if (!fl_access("@TERMUX_PREFIX@/dt/appconfig/icons", F_OK)) {
+       // Load CDE icons...
+       icon = new Fl_File_Icon("*", Fl_File_Icon::PLAIN);
+-      icon->load_image("/usr/dt/appconfig/icons/C/Dtdata.m.pm");
++      icon->load_image("@TERMUX_PREFIX@/dt/appconfig/icons/C/Dtdata.m.pm");
+ 
+       icon = new Fl_File_Icon("*", Fl_File_Icon::DIRECTORY);
+-      icon->load_image("/usr/dt/appconfig/icons/C/DtdirB.m.pm");
++      icon->load_image("@TERMUX_PREFIX@/dt/appconfig/icons/C/DtdirB.m.pm");
+ 
+       icon = new Fl_File_Icon("core", Fl_File_Icon::PLAIN);
+-      icon->load_image("/usr/dt/appconfig/icons/C/Dtcore.m.pm");
++      icon->load_image("@TERMUX_PREFIX@/dt/appconfig/icons/C/Dtcore.m.pm");
+ 
+       icon = new Fl_File_Icon("*.{bmp|bw|gif|jpg|pbm|pcd|pgm|ppm|png|ras|rgb|tif|xbm|xpm}", Fl_File_Icon::PLAIN);
+-      icon->load_image("/usr/dt/appconfig/icons/C/Dtimage.m.pm");
++      icon->load_image("@TERMUX_PREFIX@/dt/appconfig/icons/C/Dtimage.m.pm");
+ 
+       icon = new Fl_File_Icon("*.{eps|pdf|ps}", Fl_File_Icon::PLAIN);
+-      icon->load_image("/usr/dt/appconfig/icons/C/Dtps.m.pm");
++      icon->load_image("@TERMUX_PREFIX@/dt/appconfig/icons/C/Dtps.m.pm");
+ 
+       icon = new Fl_File_Icon("*.ppd", Fl_File_Icon::PLAIN);
+-      icon->load_image("/usr/dt/appconfig/icons/C/DtPrtpr.m.pm");
+-    } else if (!fl_access("/usr/lib/filetype", F_OK)) {
++      icon->load_image("@TERMUX_PREFIX@/dt/appconfig/icons/C/DtPrtpr.m.pm");
++    } else if (!fl_access("@TERMUX_PREFIX@/lib/filetype", F_OK)) {
+       // Load SGI icons...
+       icon = new Fl_File_Icon("*", Fl_File_Icon::PLAIN);
+-      icon->load_fti("/usr/lib/filetype/iconlib/generic.doc.fti");
++      icon->load_fti("@TERMUX_PREFIX@/lib/filetype/iconlib/generic.doc.fti");
+ 
+       icon = new Fl_File_Icon("*", Fl_File_Icon::DIRECTORY);
+-      icon->load_fti("/usr/lib/filetype/iconlib/generic.folder.closed.fti");
++      icon->load_fti("@TERMUX_PREFIX@/lib/filetype/iconlib/generic.folder.closed.fti");
+ 
+       icon = new Fl_File_Icon("core", Fl_File_Icon::PLAIN);
+-      icon->load_fti("/usr/lib/filetype/default/iconlib/CoreFile.fti");
++      icon->load_fti("@TERMUX_PREFIX@/lib/filetype/default/iconlib/CoreFile.fti");
+ 
+       icon = new Fl_File_Icon("*.{bmp|bw|gif|jpg|pbm|pcd|pgm|ppm|png|ras|rgb|tif|xbm|xpm}", Fl_File_Icon::PLAIN);
+-      icon->load_fti("/usr/lib/filetype/system/iconlib/ImageFile.fti");
++      icon->load_fti("@TERMUX_PREFIX@/lib/filetype/system/iconlib/ImageFile.fti");
+ 
+-      if (!fl_access("/usr/lib/filetype/install/iconlib/acroread.doc.fti", F_OK)) {
++      if (!fl_access("@TERMUX_PREFIX@/lib/filetype/install/iconlib/acroread.doc.fti", F_OK)) {
+         icon = new Fl_File_Icon("*.{eps|ps}", Fl_File_Icon::PLAIN);
+-        icon->load_fti("/usr/lib/filetype/system/iconlib/PostScriptFile.closed.fti");
++        icon->load_fti("@TERMUX_PREFIX@/lib/filetype/system/iconlib/PostScriptFile.closed.fti");
+ 
+         icon = new Fl_File_Icon("*.pdf", Fl_File_Icon::PLAIN);
+-        icon->load_fti("/usr/lib/filetype/install/iconlib/acroread.doc.fti");
++        icon->load_fti("@TERMUX_PREFIX@/lib/filetype/install/iconlib/acroread.doc.fti");
+       } else {
+         icon = new Fl_File_Icon("*.{eps|pdf|ps}", Fl_File_Icon::PLAIN);
+-        icon->load_fti("/usr/lib/filetype/system/iconlib/PostScriptFile.closed.fti");
++        icon->load_fti("@TERMUX_PREFIX@/lib/filetype/system/iconlib/PostScriptFile.closed.fti");
+       }
+ 
+-      if (!fl_access("/usr/lib/filetype/install/iconlib/html.fti", F_OK)) {
++      if (!fl_access("@TERMUX_PREFIX@/lib/filetype/install/iconlib/html.fti", F_OK)) {
+         icon = new Fl_File_Icon("*.{htm|html|shtml}", Fl_File_Icon::PLAIN);
+-        icon->load_fti("/usr/lib/filetype/iconlib/generic.doc.fti");
+-        icon->load_fti("/usr/lib/filetype/install/iconlib/html.fti");
++        icon->load_fti("@TERMUX_PREFIX@/lib/filetype/iconlib/generic.doc.fti");
++        icon->load_fti("@TERMUX_PREFIX@/lib/filetype/install/iconlib/html.fti");
+       }
+ 
+-      if (!fl_access("/usr/lib/filetype/install/iconlib/color.ps.idle.fti", F_OK)) {
++      if (!fl_access("@TERMUX_PREFIX@/lib/filetype/install/iconlib/color.ps.idle.fti", F_OK)) {
+         icon = new Fl_File_Icon("*.ppd", Fl_File_Icon::PLAIN);
+-        icon->load_fti("/usr/lib/filetype/install/iconlib/color.ps.idle.fti");
++        icon->load_fti("@TERMUX_PREFIX@/lib/filetype/install/iconlib/color.ps.idle.fti");
+       }
+     } else {
+       // Create the default icons...
+--- a/src/Fl_x.cxx
++++ b/src/Fl_x.cxx
+@@ -1471,9 +1471,9 @@ int fl_handle(const XEvent& thisevent)
+     if (!fl_selection_requestor) return 0;
+     if (Fl::e_clipboard_type == Fl::clipboard_image) {
+       if (bytesread == 0) return 0;
+-      static char tmp_fname[21];
++      static char tmp_fname[52] = {0};
+       static Fl_Shared_Image *shared = 0;
+-      strcpy(tmp_fname, "/tmp/clipboardXXXXXX");
++      strcpy(tmp_fname, "@TERMUX_PREFIX@/tmp/clipboardXXXXXX");
+       int fd = mkstemp(tmp_fname);
+       if (fd == -1) return 0;
+       uchar *p = sn_buffer; ssize_t towrite = bytesread, written;
+--- a/src/drivers/Posix/Fl_Posix_Printer_Driver.cxx
++++ b/src/drivers/Posix/Fl_Posix_Printer_Driver.cxx
+@@ -64,7 +64,7 @@ public:
+   struct GError;
+ 
+   GtkPrintJob *pjob; // data shared between begin_job() and end_job()
+-  char tmpfilename[50]; // name of temporary PostScript file containing to-be-printed data
++  char tmpfilename[100]; // name of temporary PostScript file containing to-be-printed data
+   int begin_job(int pagecount = 0, int *frompage = NULL, int *topage = NULL, char **perr_message=NULL) FL_OVERRIDE;
+   void end_job() FL_OVERRIDE;
+   static bool probe_for_GTK();
+@@ -206,7 +206,7 @@ int Fl_GTK_Printer_Driver::begin_job(int pagecount, int *firstpage, int *lastpag
+       }
+     } else if ( CALL_GTK(gtk_printer_accepts_ps)(gprinter) && //2.10
+         CALL_GTK(gtk_printer_is_active)(gprinter) ) { // 2.10
+-      strcpy(tmpfilename, "/tmp/FLTKprintjobXXXXXX");
++      strcpy(tmpfilename, "@TERMUX_PREFIX@/tmp/FLTKprintjobXXXXXX");
+       int fd = mkstemp(tmpfilename);
+       if (fd >= 0) {
+         FILE *output = fdopen(fd, "w");
+--- a/src/drivers/Unix/Fl_Unix_System_Driver.cxx
++++ b/src/drivers/Unix/Fl_Unix_System_Driver.cxx
+@@ -137,7 +137,7 @@ static char *path_find(const char *program, char *filename, int filesize) {
+                 *end;                   // End of filename buffer
+ 
+ 
+-  if ((path = fl_getenv("PATH")) == NULL) path = "/bin:/usr/bin";
++  if ((path = fl_getenv("PATH")) == NULL) path = "@TERMUX_PREFIX@/bin";
+ 
+   for (ptr = filename, end = filename + filesize - 1; *path; path ++) {
+     if (*path == ':') {
+@@ -369,6 +369,8 @@ int Fl_Unix_System_Driver::file_browser_load_filesystem(Fl_File_Browser *browser
+     mtab = fopen("/etc/fstab", "r");    // Otherwise fallback to full list
+   if (mtab == NULL)
+     mtab = fopen("/etc/vfstab", "r");   // Alternate full list file
++  if (mtab == NULL)
++    mtab = fopen("/proc/mounts", "r");  // Try to use /proc/mounts
+ 
+   if (mtab != NULL)
+   {
+@@ -515,7 +517,7 @@ char *Fl_Unix_System_Driver::preference_system_rootnode(
+     const char *application,
+     char *buffer)
+ {
+-  snprintf(buffer, FL_PATH_MAX, "/etc/fltk/%s/%s.prefs", vendor, application);
++  snprintf(buffer, FL_PATH_MAX, "@TERMUX_PREFIX@/etc/fltk/%s/%s.prefs", vendor, application);
+   return buffer;
+ }
+ 
+--- a/src/drivers/Wayland/fl_wayland_clipboard_dnd.cxx
++++ b/src/drivers/Wayland/fl_wayland_clipboard_dnd.cxx
+@@ -555,9 +555,9 @@ static int get_clipboard_image() {
+   close(fds[1]);
+   wl_display_roundtrip(Fl_Wayland_Screen_Driver::wl_display);
+   if (strcmp(fl_selection_offer_type, "image/png") == 0) {
+-    char tmp_fname[21];
++    char tmp_fname[100];
+     Fl_Shared_Image *shared = 0;
+-    strcpy(tmp_fname, "/tmp/clipboardXXXXXX");
++    strcpy(tmp_fname, "@TERMUX_PREFIX@/tmp/clipboardXXXXXX");
+     int fd = mkstemp(tmp_fname);
+     if (fd == -1) return 1;
+     while (true) {
+--- a/src/print_panel.cxx
++++ b/src/print_panel.cxx
+@@ -534,7 +534,7 @@ printing_style print_load() { // return whether SystemV or BSD printing style is
+ 
+   defname[0] = '\0';
+ // get names of all printers and of default one
+-  if ((lpstat = popen("LC_MESSAGES=C LANG=C /bin/sh -c '(lpstat -p -d ) 2>&-'", "r")) != NULL) { // try first with SystemV printing system
++  if ((lpstat = popen("LC_MESSAGES=C LANG=C @TERMUX_PREFIX@/bin/sh -c '(lpstat -p -d ) 2>&-'", "r")) != NULL) { // try first with SystemV printing system
+     while (fgets(line, sizeof(line), lpstat)) {
+       if (!strncmp(line, "printer ", 8) &&
+           sscanf(line + 8, "%s", name) == 1) {
+@@ -551,7 +551,7 @@ printing_style print_load() { // return whether SystemV or BSD printing style is
+     pclose(lpstat);
+   }
+ 
+-  if (print_choice->size() == 2 && (lpstat = fopen("/etc/printcap", "r"))) { // try next with BSD printing system
++  if (print_choice->size() == 2 && (lpstat = fopen("@TERMUX_PREFIX@/etc/printcap", "r"))) { // try next with BSD printing system
+     while (fgets(line, sizeof(line),lpstat)) { // get names of all known printers
+       if (*line == '#' || (p = strchr(line, '|')) == NULL) continue;
+       *p = 0;
+@@ -594,7 +594,7 @@ void print_update_status() {
+   status[0] = 0;
+   if (print_choice->value()) {
+     strcpy(status, "printer status unavailable");
+-    snprintf(command, sizeof(command), "/bin/sh -c \"(lpstat -p '%s' ) 2>&-\" ", printer); // try first with SystemV printing system
++    snprintf(command, sizeof(command), "@TERMUX_PREFIX@/bin/sh -c \"(lpstat -p '%s' ) 2>&-\" ", printer); // try first with SystemV printing system
+     if ((lpstat = popen(command, "r")) !=  NULL) {
+       if (fgets(status, sizeof(status), lpstat) == 0) { // if no reply
+         pclose(lpstat);

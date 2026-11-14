@@ -2,9 +2,9 @@ TERMUX_SUBPKG_INCLUDE="
 bin/lldb*
 include/lldb/
 lib/liblldb.so
-share/man/man1/lldb.1.gz
+lib/python${TERMUX_PYTHON_VERSION}/site-packages
 "
 TERMUX_SUBPKG_DESCRIPTION="LLVM-based debugger"
-TERMUX_SUBPKG_DEPENDS="libc++, libedit, libllvm, libxml2, ncurses-ui-libs"
+TERMUX_SUBPKG_DEPENDS="clang, libandroid-spawn, libc++, libedit, libxml2, python, ncurses-ui-libs"
 TERMUX_SUBPKG_BREAKS="lldb-dev, lldb-static"
 TERMUX_SUBPKG_REPLACES="lldb-dev, lldb-static"

@@ -1,45 +1,51 @@
-diff -u -r ../ruby-2.6.1/process.c ./process.c
---- ../ruby-2.6.1/process.c	2018-12-22 10:23:06.000000000 +0000
-+++ ./process.c	2019-02-16 09:27:04.713434722 +0000
-@@ -1569,9 +1569,9 @@
-     *argv = (char *)prog;
-     *--argv = (char *)"sh";
-     if (envp)
--        execve("/bin/sh", argv, envp); /* async-signal-safe */
-+        execve("@TERMUX_PREFIX@/bin/sh", argv, envp); /* async-signal-safe */
-     else
--        execv("/bin/sh", argv); /* async-signal-safe (since SUSv4) */
-+        execv("@TERMUX_PREFIX@/bin/sh", argv); /* async-signal-safe (since SUSv4) */
+--- a/process.c
++++ b/process.c
+@@ -4137,6 +4137,20 @@ rb_fork_async_signal_safe(int *status,
+     return result;
  }
  
- #else
-@@ -1639,9 +1639,9 @@
-     }
- #else
-     if (envp_str)
--        execle("/bin/sh", "sh", "-c", str, (char *)NULL, RB_IMEMO_TMPBUF_PTR(envp_str)); /* async-signal-safe */
-+        execle("@TERMUX_PREFIX@/bin/sh", "sh", "-c", str, (char *)NULL, RB_IMEMO_TMPBUF_PTR(envp_str)); /* async-signal-safe */
-     else
--        execl("/bin/sh", "sh", "-c", str, (char *)NULL); /* async-signal-safe (since SUSv4) */
-+        execl("@TERMUX_PREFIX@/bin/sh", "sh", "-c", str, (char *)NULL); /* async-signal-safe (since SUSv4) */
- #endif	/* _WIN32 */
-     return errno;
- }
-@@ -1744,7 +1744,7 @@
-     if (status == -1 && errno == ENOEXEC) {
- 	*argv = (char *)prog;
- 	*--argv = (char *)"sh";
--	status = spawnv(P_NOWAIT, "/bin/sh", (const char **)argv);
-+	status = spawnv(P_NOWAIT, "@TERMUX_PREFIX@/bin/sh", (const char **)argv);
- 	after_exec();
- 	if (status == -1) errno = ENOEXEC;
-     }
-@@ -1782,7 +1782,7 @@
++#ifdef __ANDROID__
++void __rb_atfork_prepare() {
++    rb_thread_release_fork_lock();
++}
++
++void __rb_atfork_parent() {
++    // NOOP
++}
++
++void __rb_atfork_child() {
++    // NOOP
++}
++#endif
++
+ rb_pid_t
+ rb_fork_ruby(int *status)
+ {
+@@ -4149,6 +4163,12 @@ rb_fork_ruby(int *status)
+     int try_gc = 1, err = 0;
+     struct child_handler_disabler_state old;
  
-     char *shell = dln_find_exe_r("sh", 0, fbuf, sizeof(fbuf));
-     before_exec();
--    status = spawnl(P_NOWAIT, (shell ? shell : "/bin/sh"), "sh", "-c", str, (char*)NULL);
-+    status = spawnl(P_NOWAIT, (shell ? shell : "@TERMUX_PREFIX@/bin/sh"), "sh", "-c", str, (char*)NULL);
-     after_exec();
-     return status;
- }
++#ifdef __ANDROID__
++    if ((err = pthread_atfork(__rb_atfork_prepare, __rb_atfork_parent, __rb_atfork_child))) {
++        rb_bug_errno("pthread_atfork", err);
++    }
++#endif
++
+     do {
+         prefork();
+ 
+@@ -4162,7 +4182,14 @@ rb_fork_ruby(int *status)
+         }
+ 
+         disable_child_handler_fork_parent(&old); /* yes, bad name */
++#ifdef __ANDROID__
++        /* the lock was released in the prepare hook registered at pthread_atfork */
++        if (pid == 0) {
++            rb_thread_reset_fork_lock();
++        }
++#else
+         release_fork_lock_after_fork(pid);
++#endif
+         after_fork_ruby(pid);
+ 
+         /* repeat while fork failed but retryable */

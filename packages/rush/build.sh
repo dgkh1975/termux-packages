@@ -2,10 +2,10 @@ TERMUX_PKG_HOMEPAGE=https://github.com/shenwei356/rush
 TERMUX_PKG_DESCRIPTION="A cross-platform command-line tool for executing jobs in parallel"
 TERMUX_PKG_LICENSE="MIT"
 TERMUX_PKG_MAINTAINER="Krishna kanhaiya @kcubeterm"
-TERMUX_PKG_VERSION=0.4.2
-TERMUX_PKG_REVISION=1
-TERMUX_PKG_SRCURL=https://github.com/shenwei356/rush/archive/v${TERMUX_PKG_VERSION}.tar.gz
-TERMUX_PKG_SHA256=801b17e279406c1649b401a2214148d344f673d0a1c9eed1b417655c1fefd114
+TERMUX_PKG_VERSION="0.11.1"
+TERMUX_PKG_SRCURL=https://github.com/shenwei356/rush/archive/refs/tags/v${TERMUX_PKG_VERSION}.tar.gz
+TERMUX_PKG_SHA256=834bb6495e645b1983c48076c42eff3b0c6f769a7bbf6084b0de2ab711e861cc
+TERMUX_PKG_AUTO_UPDATE=true
 
 termux_step_make_install() {
 	termux_setup_golang

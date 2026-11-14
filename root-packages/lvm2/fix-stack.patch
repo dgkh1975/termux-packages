@@ -1,0 +1,11 @@
+--- a/tools/man-generator.c
++++ b/tools/man-generator.c
+@@ -20,7 +20,7 @@
+ #include <unistd.h>
+ 
+ 
+-#define stack
++#define log_stack
+ 
+ static const char _OPTION_PREFIX[] = "O_";
+ static const char _TAB_NAME[] = "TT";

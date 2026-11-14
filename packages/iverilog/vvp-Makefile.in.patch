@@ -1,8 +1,7 @@
-diff -uNr iverilog-10_2/vvp/Makefile.in iverilog-10_2.mod/vvp/Makefile.in
---- iverilog-10_2/vvp/Makefile.in	2017-08-24 18:22:49.000000000 +0300
-+++ iverilog-10_2.mod/vvp/Makefile.in	2019-02-25 20:18:31.607079821 +0200
-@@ -32,8 +32,8 @@
- includedir = @includedir@
+--- a/vvp/Makefile.in
++++ b/vvp/Makefile.in
+@@ -35,8 +35,8 @@
+ pdfdir = @docdir@
  
  # For a cross compile these defines will need to be set accordingly.
 -HOSTCC = @CC@
@@ -10,5 +9,14 @@ diff -uNr iverilog-10_2/vvp/Makefile.in iverilog-10_2.mod/vvp/Makefile.in
 +HOSTCC = gcc
 +HOSTCFLAGS = @WARNING_FLAGS@ @WARNING_FLAGS_CC@
  
- CC = @CC@
- CXX = @CXX@
+ BUILDCC = @CC_FOR_BUILD@
+ BUILDEXT = @BUILD_EXEEXT@
+@@ -168,7 +168,7 @@
+ 	mv $*.d dep/$*.d
+ 
+ tables.cc: $(srcdir)/draw_tt.c
+-	$(BUILDCC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o draw_tt$(BUILDEXT) $(srcdir)/draw_tt.c
++	$(BUILDCC) $(CPPFLAGS_FOR_BUILD) $(CFLAGS_FOR_BUILD) $(LDFLAGS_FOR_BUILD) -o draw_tt$(BUILDEXT) $(srcdir)/draw_tt.c
+ 	./draw_tt$(BUILDEXT) > tables.cc
+ 	rm draw_tt$(BUILDEXT)
+ 

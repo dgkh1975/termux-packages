@@ -1,0 +1,18 @@
+--- a/src/terminal/TerminalServerMain.cpp
++++ b/src/terminal/TerminalServerMain.cpp
+@@ -68,13 +68,13 @@ int TerminalServerMain(
+ #ifdef WIN32
+              (GetTempDirectory() + "etserver.pid")
+ #else
+-             "/var/run/etserver.pid"
++             "@TERMUX_PREFIX@/var/run/etserver.pid"
+ #endif
+                  ))  //
+         ("v,verbose", "Enable verbose logging",
+          cxxopts::value<int>()->default_value("0"), "LEVEL")  //
+         ("serverfifo",
+-         "If set, listens on the matching fifo name",       //
++         "If set, listens on the matching server fifo name",       //
+          cxxopts::value<std::string>()->default_value(""))  //
+         ("telemetry",
+          "Allow et to anonymously send errors to guide future improvements",
